@@ -12,7 +12,6 @@ const bodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   day: z.object({
     klaudObshch: z.string(),
-    sebestoimost: z.string(),
     nalichnye: z.string(),
     kaspi: z.string(),
     halyk: z.string(),
@@ -63,7 +62,6 @@ export async function POST(req: NextRequest) {
   const values = {
     date,
     klaudObshch: money(day.klaudObshch),
-    sebestoimost: money(day.sebestoimost),
     nalichnye: money(day.nalichnye),
     kaspi: money(day.kaspi),
     halyk: money(day.halyk),
@@ -94,5 +92,25 @@ export async function POST(req: NextRequest) {
     await db.insert(cashExpenses).values(rows);
   }
 
+  return NextResponse.json({ ok: true });
+}
+
+// Точечное редактирование себестоимости за дату (вносится из Отчётов).
+const patchSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  sebestoimost: z.string(),
+});
+
+export async function PATCH(req: NextRequest) {
+  const parsed = patchSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  const { date, sebestoimost } = parsed.data;
+  const val = money(sebestoimost);
+  await db
+    .insert(cashDays)
+    .values({ date, sebestoimost: val })
+    .onConflictDoUpdate({ target: cashDays.date, set: { sebestoimost: val } });
   return NextResponse.json({ ok: true });
 }

@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type PerDay = { date: string; klaud: number; obshchReal: number; minPlus: number };
+type PerDay = {
+  date: string;
+  klaud: number;
+  sebestoimost: number;
+  obshchReal: number;
+  minPlus: number;
+};
 type Report = {
   from: string;
   to: string;
@@ -61,6 +67,8 @@ export default function ReportsPage() {
   const [preset, setPreset] = useState("month");
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
+  // Черновики редактируемой себестоимости по датам
+  const [sebEdits, setSebEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(async (f: string, t: string) => {
     setLoading(true);
@@ -74,7 +82,22 @@ export default function ReportsPage() {
 
   useEffect(() => {
     load(from, to);
+    setSebEdits({});
   }, [from, to, load]);
+
+  async function saveSebestoimost(date: string, value: string) {
+    await fetch("/api/kassa", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, sebestoimost: value === "" ? "0" : value }),
+    });
+    setSebEdits((s) => {
+      const next = { ...s };
+      delete next[date];
+      return next;
+    });
+    await load(from, to);
+  }
 
   function applyPreset(name: string, range: { from: string; to: string }) {
     setPreset(name);
@@ -191,6 +214,7 @@ export default function ReportsPage() {
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Дата</th>
                     <th className="px-2 py-2 text-right font-medium">Клауд</th>
+                    <th className="px-2 py-2 text-right font-medium">Себест.</th>
                     <th className="px-2 py-2 text-right font-medium">ОБЩ РЕАЛ</th>
                     <th className="px-3 py-2 text-right font-medium">МИН/ПЛЮС</th>
                   </tr>
@@ -202,6 +226,22 @@ export default function ReportsPage() {
                         {d.date.slice(5)}
                       </td>
                       <td className="px-2 py-2 text-right">{fmt(d.klaud)}</td>
+                      <td className="px-1 py-1 text-right">
+                        <input
+                          inputMode="decimal"
+                          value={sebEdits[d.date] ?? (d.sebestoimost ? String(d.sebestoimost) : "")}
+                          onChange={(e) =>
+                            setSebEdits((s) => ({ ...s, [d.date]: e.target.value }))
+                          }
+                          onBlur={(e) => {
+                            const v = e.target.value;
+                            if (v !== String(d.sebestoimost) && !(v === "" && d.sebestoimost === 0))
+                              saveSebestoimost(d.date, v);
+                          }}
+                          placeholder="0"
+                          className="w-20 rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-right text-sm tabular-nums outline-none focus:border-emerald-600"
+                        />
+                      </td>
                       <td className="px-2 py-2 text-right">{fmt(d.obshchReal)}</td>
                       <td
                         className={
@@ -220,7 +260,7 @@ export default function ReportsPage() {
                   ))}
                   {data.gap.perDay.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-neutral-500">
+                      <td colSpan={5} className="px-3 py-4 text-center text-neutral-500">
                         Нет данных за период
                       </td>
                     </tr>

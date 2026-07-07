@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
     return {
       date: day.date,
       klaud,
+      sebestoimost: n(day.sebestoimost),
       obshchReal: Math.round(obshchReal * 100) / 100,
       minPlus,
     };
