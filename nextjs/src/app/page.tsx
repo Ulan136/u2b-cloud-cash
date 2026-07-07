@@ -3,8 +3,7 @@ import Link from "next/link";
 const menu = [
   { href: "/kassa", label: "Касса", icon: "💰" },
   { href: "/dolgi", label: "Долги", icon: "📋" },
-  { href: "/inkassaciya", label: "Инкассация", icon: "🏦" },
-  { href: "/zarplata", label: "Зарплата", icon: "👥" },
+  { href: "/salary", label: "Зарплата", icon: "👥" },
   { href: "/kons", label: "КОНС", icon: "📦" },
   { href: "/otchety", label: "Отчёты", icon: "📊" },
 ];
