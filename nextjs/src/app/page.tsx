@@ -5,7 +5,7 @@ const menu = [
   { href: "/dolgi", label: "Долги", icon: "📋" },
   { href: "/salary", label: "Зарплата", icon: "👥" },
   { href: "/kons", label: "КОНС", icon: "📦" },
-  { href: "/otchety", label: "Отчёты", icon: "📊" },
+  { href: "/reports", label: "Отчёты", icon: "📊" },
 ];
 
 export default function Home() {
