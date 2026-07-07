@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 const MONEY_FIELDS = [
   { key: "klaudObshch", label: "Клауд общ", hint: "продажи CloudShop" },
+  { key: "sebestoimost", label: "Себестоимость (CloudShop)", hint: "вносит админ" },
   { key: "nalichnye", label: "НАЛИЧНЫЕ" },
   { key: "kaspi", label: "КАС" },
   { key: "halyk", label: "ХАЛ" },
@@ -34,6 +35,7 @@ type Expense = { category: string; amount: string; comment: string };
 
 const emptyDay = (): Day => ({
   klaudObshch: "",
+  sebestoimost: "",
   nalichnye: "",
   kaspi: "",
   halyk: "",
@@ -77,6 +79,7 @@ export default function KassaPage() {
         data.day
           ? {
               klaudObshch: s(data.day.klaudObshch),
+              sebestoimost: s(data.day.sebestoimost),
               nalichnye: s(data.day.nalichnye),
               kaspi: s(data.day.kaspi),
               halyk: s(data.day.halyk),

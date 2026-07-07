@@ -25,6 +25,7 @@ export const cashDays = pgTable("cash_days", {
   id: serial("id").primaryKey(),
   date: date("date").notNull().unique(),
   klaudObshch: numeric("klaud_obshch").default("0"),
+  sebestoimost: numeric("sebestoimost").default("0"),
   nalichnye: numeric("nalichnye").default("0"),
   kaspi: numeric("kaspi").default("0"),
   halyk: numeric("halyk").default("0"),

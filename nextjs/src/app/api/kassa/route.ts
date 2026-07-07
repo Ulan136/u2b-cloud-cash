@@ -12,6 +12,7 @@ const bodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   day: z.object({
     klaudObshch: z.string(),
+    sebestoimost: z.string(),
     nalichnye: z.string(),
     kaspi: z.string(),
     halyk: z.string(),
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
   const values = {
     date,
     klaudObshch: money(day.klaudObshch),
+    sebestoimost: money(day.sebestoimost),
     nalichnye: money(day.nalichnye),
     kaspi: money(day.kaspi),
     halyk: money(day.halyk),
