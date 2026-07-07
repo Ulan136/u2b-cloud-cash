@@ -5,6 +5,7 @@ const menu = [
   { href: "/dolgi", label: "Долги", icon: "📋" },
   { href: "/salary", label: "Зарплата", icon: "👥" },
   { href: "/kons", label: "КОНС", icon: "📦" },
+  { href: "/finance", label: "Финансы", icon: "🏦" },
   { href: "/reports", label: "Отчёты", icon: "📊" },
 ];
 

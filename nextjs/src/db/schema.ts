@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   integer,
   numeric,
@@ -78,4 +79,43 @@ export const kons = pgTable("kons", {
   prihod: numeric("prihod").default("0"),
   rashod: numeric("rashod").default("0"),
   comment: text("comment"),
+});
+
+// ── Финансовый модуль ──
+export const finCategories = pgTable("fin_categories", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  icon: text("icon"),
+  color: text("color"),
+});
+
+export const finAccounts = pgTable("fin_accounts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  categoryId: integer("category_id").references(() => finCategories.id),
+  icon: text("icon"),
+  initialBalance: numeric("initial_balance").default("0"),
+  archived: boolean("archived").default(false),
+});
+
+export const finOps = pgTable("fin_ops", {
+  id: serial("id").primaryKey(),
+  date: date("date").notNull(),
+  name: text("name"),
+  accountId: integer("account_id")
+    .notNull()
+    .references(() => finAccounts.id),
+  type: text("type").notNull(), // Приход / Расход / Перевод
+  amount: numeric("amount").notNull(),
+  comment: text("comment"),
+  toAccountId: integer("to_account_id").references(() => finAccounts.id),
+});
+
+export const finFavs = pgTable("fin_favs", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  accountId: integer("account_id").references(() => finAccounts.id),
+  type: text("type"),
+  amount: numeric("amount"),
 });
