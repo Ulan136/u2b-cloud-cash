@@ -1,4 +1,4 @@
-import { money } from "@/lib/money";
+import { money, num } from "@/lib/money";
 import type { SaveDayInput } from "@/dto/kassa.dto";
 import * as cashDaysRepo from "@/repositories/cashDays.repo";
 import * as expensesRepo from "@/repositories/expenses.repo";
@@ -52,10 +52,11 @@ export async function saveDay(input: SaveDayInput) {
   const { date: _d, ...set } = values;
   await cashDaysRepo.upsert(values, set);
 
-  // расходы дня переписываем целиком (add/edit/delete одним махом)
+  // Расходы дня переписываем целиком: категория+дата уникальны, нулевая/пустая
+  // сумма означает удаление записи категории за день (не вставляем её).
   await expensesRepo.deleteByDate(date);
   const rows = expenses
-    .filter((e) => e.amount !== "" && e.category)
+    .filter((e) => e.category && num(e.amount) !== 0)
     .map((e) => ({
       date,
       category: e.category,
@@ -67,6 +68,48 @@ export async function saveDay(input: SaveDayInput) {
   }
 
   return { ok: true };
+}
+
+// Архив дней: последние дни с кассой + их МИН/ПЛЮС (новые сверху).
+export async function listRecentDays(from: string, to: string) {
+  const [days, expenses, debtRows] = await Promise.all([
+    cashDaysRepo.findInPeriod(from, to),
+    expensesRepo.findInPeriod(from, to),
+    debtsRepo.findInPeriod(from, to),
+  ]);
+
+  const expByDate = new Map<string, number>();
+  for (const e of expenses) {
+    expByDate.set(e.date, (expByDate.get(e.date) ?? 0) + num(e.amount));
+  }
+  const debtByDate = new Map<string, { debt: number; payment: number }>();
+  for (const d of debtRows) {
+    const c = debtByDate.get(d.date) ?? { debt: 0, payment: 0 };
+    c.debt += num(d.debtAmount);
+    c.payment += num(d.paymentAmount);
+    debtByDate.set(d.date, c);
+  }
+
+  const list = days
+    .map((day) => {
+      const klaud = num(day.klaudObshch);
+      const dd = debtByDate.get(day.date) ?? { debt: 0, payment: 0 };
+      const obshchReal = computeObshchReal({
+        nal: num(day.nalichnye),
+        kas: num(day.kaspi),
+        hal: num(day.halyk),
+        rashod: expByDate.get(day.date) ?? 0,
+        zakup: num(day.zakupTovar),
+        inkas: num(day.inkasNalichka),
+        debt: dd.debt,
+        vozvrat: num(day.vozvrat),
+        vozvratDolg: dd.payment,
+      });
+      return { date: day.date, klaud, minPlus: computeMinPlus(obshchReal, klaud) };
+    })
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  return { days: list };
 }
 
 export async function setSebestoimost(date: string, sebestoimost: string) {

@@ -15,7 +15,8 @@ const DAY_KEYS = [
 ] as const;
 type DayKey = (typeof DAY_KEYS)[number];
 
-const EXPENSE_CATEGORIES = [
+// Фиксированный список категорий (как строки в листе), без селектов.
+const CATEGORIES = [
   "ЗАРПЛАТА",
   "расход БРАК",
   "Логистика",
@@ -26,11 +27,13 @@ const EXPENSE_CATEGORIES = [
   "Мусор",
   "Свет",
   "Мега кошелек",
-  "прочее",
+  "резерв2",
+  "резерв3",
 ];
 
 type Day = Record<DayKey, string> & { comment: string };
-type Expense = { category: string; amount: string; comment: string };
+type Exp = Record<string, { amount: string; comment: string }>;
+type ArchiveDay = { date: string; klaud: number; minPlus: number };
 
 const emptyDay = (): Day => ({
   klaudObshch: "",
@@ -43,11 +46,13 @@ const emptyDay = (): Day => ({
   comment: "",
 });
 
-function todayStr() {
-  const d = new Date();
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
+function fmtLocal(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
+const todayStr = () => fmtLocal(new Date());
 
 const num = (v: string) => {
   const n = parseFloat(v);
@@ -56,7 +61,6 @@ const num = (v: string) => {
 const fmt = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
 
-// приглушённые метки строк (как цветные ячейки в листе)
 const STRIPE: Partial<Record<DayKey, string>> = {
   nalichnye: "#3b6ea5",
   kaspi: "#a55b5b",
@@ -66,15 +70,30 @@ const STRIPE: Partial<Record<DayKey, string>> = {
 export default function KassaPage() {
   const [date, setDate] = useState(todayStr());
   const [day, setDay] = useState<Day>(emptyDay());
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [exp, setExp] = useState<Exp>(() => {
+    const m: Exp = {};
+    for (const c of CATEGORIES) m[c] = { amount: "", comment: "" };
+    return m;
+  });
+  const [extraCats, setExtraCats] = useState<string[]>([]);
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [totals, setTotals] = useState({ debt: "0", payment: "0" });
+  const [archive, setArchive] = useState<ArchiveDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
-  // Фоновое обновление (polling/focus) трогает только просмотр — totals (ДОЛГ/Возврат
-  // долг из debts, влияют на авто-МИН/ПЛЮС). day и expenses — форма пользователя,
-  // при фоне их НЕ перезаписываем, чтобы не затереть несохранённый ввод.
+  const archRange = useMemo(() => {
+    const t = new Date();
+    const f = new Date();
+    f.setDate(t.getDate() - 60);
+    return { from: fmtLocal(f), to: fmtLocal(t) };
+  }, []);
+
+  const displayCats = useMemo(() => [...CATEGORIES, ...extraCats], [extraCats]);
+
+  // Фон (polling/focus) обновляет только просмотр: totals (ДОЛГ/Возврат долг → авто-МИН/ПЛЮС)
+  // и архив дней. day и exp — форма пользователя, при фоне не перезаписываем.
   const load = useCallback(
     async ({ background }: { background: boolean }) => {
       if (!background) {
@@ -82,10 +101,17 @@ export default function KassaPage() {
         setStatus("");
       }
       try {
-        const res = await fetch(`/api/kassa?date=${date}`);
-        const data = await res.json();
+        const [dayRes, archRes] = await Promise.all([
+          fetch(`/api/kassa?date=${date}`),
+          fetch(`/api/kassa?from=${archRange.from}&to=${archRange.to}`),
+        ]);
+        const data = await dayRes.json();
+        const arch = await archRes.json();
         const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+
         setTotals(data.totals ?? { debt: "0", payment: "0" });
+        setArchive(arch.days ?? []);
+
         if (!background) {
           setDay(
             data.day
@@ -101,39 +127,36 @@ export default function KassaPage() {
                 }
               : emptyDay()
           );
-          setExpenses(
-            (data.expenses ?? []).map((e: Record<string, unknown>) => ({
-              category: String(e.category ?? ""),
-              amount: s(e.amount),
-              comment: s(e.comment),
-            }))
-          );
+          const map: Exp = {};
+          for (const c of CATEGORIES) map[c] = { amount: "", comment: "" };
+          const extras: string[] = [];
+          for (const e of data.expenses ?? []) {
+            const cat = String(e.category ?? "");
+            map[cat] = { amount: s(e.amount), comment: s(e.comment) };
+            if (!CATEGORIES.includes(cat)) extras.push(cat);
+          }
+          setExp(map);
+          setExtraCats(extras);
         }
       } finally {
         if (!background) setLoading(false);
       }
     },
-    [date]
+    [date, archRange]
   );
 
   const { refreshing, lastUpdated } = useLiveData("kassa", load, [date]);
 
   const setField = (key: DayKey | "comment", value: string) =>
     setDay((d) => ({ ...d, [key]: value }));
-
-  const addExpense = () =>
-    setExpenses((e) => [...e, { category: EXPENSE_CATEGORIES[0], amount: "", comment: "" }]);
-  const updateExpense = (i: number, patch: Partial<Expense>) =>
-    setExpenses((e) => e.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
-  const removeExpense = (i: number) =>
-    setExpenses((e) => e.filter((_, idx) => idx !== i));
+  const updateExp = (cat: string, patch: Partial<{ amount: string; comment: string }>) =>
+    setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), ...patch } }));
 
   const expensesTotal = useMemo(
-    () => expenses.reduce((s, e) => s + num(e.amount), 0),
-    [expenses]
+    () => displayCats.reduce((s, c) => s + num(exp[c]?.amount ?? ""), 0),
+    [displayCats, exp]
   );
 
-  // Автополя и формулы (C7 «ОБЩ РЕАЛ» и C17 «МИН/ПЛЮС»)
   const calc = useMemo(() => {
     const nal = num(day.nalichnye);
     const kas = num(day.kaspi);
@@ -145,7 +168,6 @@ export default function KassaPage() {
     const debt = num(totals.debt);
     const vozvratDolg = num(totals.payment);
     const rashod = expensesTotal;
-
     const obshchReal =
       nal + kas + hal + (rashod + zakup + inkas + debt + vozvrat) - vozvratDolg;
     const minPlus = Math.round((obshchReal - klaud) * 100) / 100;
@@ -156,14 +178,17 @@ export default function KassaPage() {
     setSaving(true);
     setStatus("");
     try {
+      const expenses = displayCats
+        .map((c) => ({
+          category: c,
+          amount: exp[c]?.amount ?? "",
+          comment: exp[c]?.comment ?? "",
+        }))
+        .filter((e) => num(e.amount) !== 0);
       const res = await fetch("/api/kassa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date,
-          day,
-          expenses: expenses.filter((e) => e.amount !== "" && e.category),
-        }),
+        body: JSON.stringify({ date, day, expenses }),
       });
       if (!res.ok) throw new Error();
       setStatus("Сохранено ✓");
@@ -186,7 +211,7 @@ export default function KassaPage() {
         value={day[key]}
         onChange={(e) => setField(key, e.target.value)}
         placeholder="0"
-        className="h-full w-36 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30"
+        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30"
       />
     </div>
   );
@@ -199,9 +224,7 @@ export default function KassaPage() {
       }
     >
       <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-neutral-400">{label}</span>
-      <span className="w-36 pr-3 text-right text-sm font-semibold tabular-nums">
-        {fmt(value)}
-      </span>
+      <span className="w-32 pr-3 text-right text-sm font-semibold tabular-nums">{fmt(value)}</span>
     </div>
   );
 
@@ -210,7 +233,7 @@ export default function KassaPage() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 px-3 py-4">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-4xl">
         <header className="mb-3 flex items-center gap-2">
           <h1 className="text-xl font-bold">Касса</h1>
           <span className="ml-auto flex items-center gap-2 text-xs text-neutral-500">
@@ -223,7 +246,7 @@ export default function KassaPage() {
           </span>
         </header>
 
-        {/* Дата + сохранить — компактно сверху */}
+        {/* Дата + сохранить */}
         <div className="mb-3 flex items-center gap-2">
           <input
             type="date"
@@ -241,87 +264,84 @@ export default function KassaPage() {
           </button>
         </div>
 
-        {/* Компактная таблица дня — как в листе */}
-        <div className="overflow-hidden rounded-xl border border-neutral-800 divide-y divide-neutral-800">
-          {inputRow("klaudObshch", "касса Claud")}
-          {autoRow("ОБЩ РЕАЛ", calc.obshchReal, true)}
-          {inputRow("nalichnye", "НАЛИЧНЫЕ")}
-          {inputRow("kaspi", "КАС")}
-          {inputRow("halyk", "ХАЛ")}
-          {inputRow("inkasNalichka", "инкас наличка")}
-          {inputRow("vozvrat", "возврат")}
-          {autoRow("ДОЛГ", calc.debt)}
-          {autoRow("Расход", calc.rashod)}
-          {inputRow("zakupTovar", "закуп товар")}
-          {autoRow("Возврат долг", calc.vozvratDolg)}
-          {/* МИН/ПЛЮС — крупнее, цвет */}
-          <div className="flex h-14 items-center border-l-4 border-transparent bg-neutral-900">
-            <span className="flex-1 pl-3 pr-2 text-sm font-bold text-neutral-300">
-              МИН/ПЛЮС
-            </span>
-            <span className={"w-40 pr-3 text-right text-2xl font-extrabold tabular-nums " + mpColor}>
-              {mp > 0 ? "+" : ""}
-              {fmt(mp)}
-            </span>
+        {/* Две колонки: слева касса, справа расходы */}
+        <div className="grid gap-3 md:grid-cols-2">
+          {/* ЛЕВАЯ — таблица дня */}
+          <div className="overflow-hidden rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+            {inputRow("klaudObshch", "касса Claud")}
+            {autoRow("ОБЩ РЕАЛ", calc.obshchReal, true)}
+            {inputRow("nalichnye", "НАЛИЧНЫЕ")}
+            {inputRow("kaspi", "КАС")}
+            {inputRow("halyk", "ХАЛ")}
+            {inputRow("inkasNalichka", "инкас наличка")}
+            {inputRow("vozvrat", "возврат")}
+            {autoRow("ДОЛГ", calc.debt)}
+            {autoRow("Расход", calc.rashod)}
+            {inputRow("zakupTovar", "закуп товар")}
+            {autoRow("Возврат долг", calc.vozvratDolg)}
+            <div className="flex h-14 items-center border-l-4 border-transparent bg-neutral-900">
+              <span className="flex-1 pl-3 pr-2 text-sm font-bold text-neutral-300">МИН/ПЛЮС</span>
+              <span className={"w-36 pr-3 text-right text-2xl font-extrabold tabular-nums " + mpColor}>
+                {mp > 0 ? "+" : ""}
+                {fmt(mp)}
+              </span>
+            </div>
+          </div>
+
+          {/* ПРАВАЯ — расходы фиксированным списком */}
+          <div>
+            <div className="mb-1 flex items-center justify-between px-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                Расходы дня
+              </span>
+              <span className="text-xs tabular-nums text-neutral-300">Σ {fmt(expensesTotal)}</span>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+              {displayCats.map((cat) => (
+                <div key={cat}>
+                  <div
+                    className="flex h-10 items-center"
+                    style={{ background: "rgba(16,64,36,0.18)" }}
+                  >
+                    <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-neutral-300">
+                      {cat}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenComments((o) => ({ ...o, [cat]: !o[cat] }))
+                      }
+                      title="Комментарий"
+                      className={
+                        "px-1 text-xs " +
+                        (exp[cat]?.comment || openComments[cat]
+                          ? "text-emerald-400"
+                          : "text-neutral-600 hover:text-neutral-300")
+                      }
+                    >
+                      💬
+                    </button>
+                    <input
+                      inputMode="decimal"
+                      value={exp[cat]?.amount ?? ""}
+                      onChange={(e) => updateExp(cat, { amount: e.target.value })}
+                      placeholder="0"
+                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30"
+                    />
+                  </div>
+                  {openComments[cat] && (
+                    <input
+                      value={exp[cat]?.comment ?? ""}
+                      onChange={(e) => updateExp(cat, { comment: e.target.value })}
+                      placeholder="комментарий"
+                      className="w-full bg-neutral-900 px-3 py-1.5 text-xs outline-none"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* Расходы дня — компактно ниже таблицы */}
-        <section className="mt-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Расходы дня
-            </span>
-            <span className="text-xs tabular-nums text-neutral-300">Σ {fmt(expensesTotal)}</span>
-          </div>
-          <div className="space-y-1.5">
-            {expenses.map((row, i) => (
-              <div key={i} className="rounded-lg border border-neutral-800 bg-neutral-900 p-2 space-y-1">
-                <div className="flex items-center gap-2">
-                  <select
-                    value={row.category}
-                    onChange={(e) => updateExpense(i, { category: e.target.value })}
-                    className="flex-1 rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm"
-                  >
-                    {EXPENSE_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    inputMode="decimal"
-                    value={row.amount}
-                    onChange={(e) => updateExpense(i, { amount: e.target.value })}
-                    placeholder="сумма"
-                    className="w-24 rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-right text-sm tabular-nums"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeExpense(i)}
-                    className="rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-red-400"
-                    aria-label="Удалить расход"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <input
-                  value={row.comment}
-                  onChange={(e) => updateExpense(i, { comment: e.target.value })}
-                  placeholder="комментарий"
-                  className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs"
-                />
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={addExpense}
-            className="mt-2 w-full rounded-lg border border-dashed border-neutral-700 py-2 text-sm text-neutral-300 active:bg-neutral-900"
-          >
-            + расход
-          </button>
-        </section>
 
         {/* Комментарий дня + сохранить снизу */}
         <input
@@ -338,6 +358,40 @@ export default function KassaPage() {
         >
           {saving ? "Сохранение…" : "Сохранить"}
         </button>
+
+        {/* Архив дней */}
+        <section className="mt-5">
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            Архив дней
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {archive.map((d) => {
+              const c = d.minPlus < 0 ? "text-red-400" : d.minPlus > 0 ? "text-orange-400" : "text-cyan-400";
+              return (
+                <button
+                  key={d.date}
+                  type="button"
+                  onClick={() => setDate(d.date)}
+                  className={
+                    "shrink-0 rounded-lg border px-3 py-2 text-center " +
+                    (d.date === date
+                      ? "border-emerald-600 bg-emerald-600/10"
+                      : "border-neutral-800 bg-neutral-900")
+                  }
+                >
+                  <div className="text-[11px] text-neutral-400">{d.date.slice(5)}</div>
+                  <div className={"text-sm font-bold tabular-nums " + c}>
+                    {d.minPlus > 0 ? "+" : ""}
+                    {fmt(d.minPlus)}
+                  </div>
+                </button>
+              );
+            })}
+            {archive.length === 0 && (
+              <span className="py-3 text-sm text-neutral-500">Нет сохранённых дней</span>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );

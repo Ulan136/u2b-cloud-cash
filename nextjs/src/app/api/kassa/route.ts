@@ -4,11 +4,23 @@ import { patchSebestoimostSchema, saveDaySchema } from "@/dto/kassa.dto";
 import * as kassaService from "@/services/kassa.service";
 
 export async function GET(req: NextRequest) {
-  const date = req.nextUrl.searchParams.get("date");
-  if (!date || !DATE_RE.test(date)) {
-    return NextResponse.json({ error: "date (YYYY-MM-DD) обязателен" }, { status: 400 });
+  const sp = req.nextUrl.searchParams;
+  const date = sp.get("date");
+  if (date) {
+    if (!DATE_RE.test(date)) {
+      return NextResponse.json({ error: "date (YYYY-MM-DD) обязателен" }, { status: 400 });
+    }
+    return NextResponse.json(await kassaService.getDay(date));
   }
-  return NextResponse.json(await kassaService.getDay(date));
+
+  // Архив дней за период
+  const from = sp.get("from");
+  const to = sp.get("to");
+  if (from && to && DATE_RE.test(from) && DATE_RE.test(to)) {
+    return NextResponse.json(await kassaService.listRecentDays(from, to));
+  }
+
+  return NextResponse.json({ error: "date или from&to обязательны" }, { status: 400 });
 }
 
 export async function POST(req: NextRequest) {
