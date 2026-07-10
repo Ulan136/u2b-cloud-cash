@@ -878,6 +878,8 @@ function HistTab({
 }
 
 // ── СЧЕТА ──
+const ICON_SET = ["🍊", "⭐", "🏦", "💵", "💰", "💳", "🪙", "📦", "🧾", "💼", "🏧", "💲", "🤝", "📈", "🧮", "🛒"];
+
 function AccTab({
   accounts,
   categories,
@@ -889,30 +891,61 @@ function AccTab({
   onChanged: () => Promise<void>;
   flash: (m: string) => void;
 }) {
+  // добавление счёта
+  const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [icon, setIcon] = useState("");
+  const [icon, setIcon] = useState("🍊");
   const [initial, setInitial] = useState("");
+
+  // редактирование счёта
+  const [editId, setEditId] = useState<number | null>(null);
+  const [eName, setEName] = useState("");
+  const [eIcon, setEIcon] = useState("");
+  const [eInitial, setEInitial] = useState("");
+  const [eCat, setECat] = useState<number | "">("");
+
+  // категории
+  const [newCat, setNewCat] = useState("");
 
   useEffect(() => {
     if (categoryId === "" && categories[0]) setCategoryId(categories[0].id);
   }, [categories, categoryId]);
 
-  async function changeCategory(id: number, catId: number) {
+  async function patchAccount(body: Record<string, unknown>) {
     await fetch("/api/finance/accounts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, categoryId: catId }),
+      body: JSON.stringify(body),
     });
     await onChanged();
   }
 
-  async function toggleArchive(a: Account) {
-    await fetch("/api/finance/accounts", {
+  function startEdit(a: Account) {
+    setEditId(a.id);
+    setEName(a.name);
+    setEIcon(a.icon ?? "");
+    setEInitial(String(a.initialBalance));
+    setECat(a.categoryId ?? "");
+  }
+
+  async function saveEdit() {
+    if (editId == null) return;
+    if (!eName.trim()) return flash("⚠️ Введите название");
+    const res = await fetch("/api/finance/accounts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: a.id, archived: !a.archived }),
+      body: JSON.stringify({
+        id: editId,
+        name: eName.trim(),
+        icon: eIcon,
+        initialBalance: String(evalAmount(eInitial) ?? 0),
+        categoryId: eCat === "" ? null : eCat,
+      }),
     });
+    if (res.status === 409) return flash("⚠️ Счёт с таким названием уже есть");
+    setEditId(null);
+    flash("✅ Счёт обновлён");
     await onChanged();
   }
 
@@ -931,83 +964,156 @@ function AccTab({
     if (res.status === 409) return flash("⚠️ Счёт уже существует");
     if (!res.ok) return flash("Ошибка");
     setName("");
-    setIcon("");
+    setIcon("🍊");
     setInitial("");
+    setShowAdd(false);
     flash("✅ Счёт создан");
     await onChanged();
   }
 
+  async function addCategory() {
+    if (!newCat.trim()) return;
+    await fetch("/api/finance/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCat.trim() }),
+    });
+    setNewCat("");
+    await onChanged();
+  }
+
+  async function renameCategory(id: number, value: string, prev: string) {
+    if (value.trim() && value !== prev) {
+      await fetch("/api/finance/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: value.trim() }),
+      });
+      await onChanged();
+    }
+  }
+
   return (
     <>
-      <div className="mb-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
-          Мои счета
+      {/* Кнопка добавления на видном месте */}
+      <button
+        type="button"
+        onClick={() => setShowAdd((v) => !v)}
+        className="mb-3 w-full rounded-xl bg-[#f2994a] py-3 text-base font-extrabold text-white active:bg-[#e07f30]"
+      >
+        ＋ Добавить счёт
+      </button>
+
+      {showAdd && (
+        <div className="mb-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
+          <Label>Название</Label>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Каспи Голд" className={input} />
+          <Label>Категория</Label>
+          <select value={categoryId} onChange={(e) => setCategoryId(Number(e.target.value))} className={input}>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+            ))}
+          </select>
+          <Label>Иконка</Label>
+          <div className="flex flex-wrap gap-1">
+            {ICON_SET.map((em) => (
+              <button
+                key={em}
+                type="button"
+                onClick={() => setIcon(em)}
+                className={"rounded-lg border px-2 py-1 text-lg " + (icon === em ? "border-[#2f80ed] bg-[#eaf1fd]" : "border-[#e5e7eb]")}
+              >
+                {em}
+              </button>
+            ))}
+          </div>
+          <Label>Начальный баланс (₸)</Label>
+          <AmountInput value={initial} onChange={setInitial} placeholder="0" />
+          <button
+            type="button"
+            onClick={addAccount}
+            className="mt-4 w-full rounded-xl bg-[#f2994a] py-3 text-base font-extrabold text-white active:bg-[#e07f30]"
+          >
+            Создать счёт
+          </button>
         </div>
+      )}
+
+      {/* Список счетов */}
+      <div className="mb-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">Мои счета</div>
         <div className="space-y-3">
-          {accounts.map((a) => (
-            <div key={a.id} className={"rounded-xl border p-3 " + (a.archived ? "border-[#e5e7eb] bg-[#f0f2f5] opacity-60" : "border-[#e5e7eb] bg-[#f0f2f5]")}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{a.icon}</span>
-                  <div>
-                    <div className="text-sm font-bold">{a.name}</div>
-                    <div className="text-[11px] text-[#9ca3af]">
-                      нач. <Amt>{fmtNum(a.initialBalance)}</Amt> ₸
+          {accounts.map((a) =>
+            editId === a.id ? (
+              <div key={a.id} className="rounded-xl border border-[#2f80ed] bg-[#eaf1fd] p-3 space-y-2">
+                <input value={eName} onChange={(e) => setEName(e.target.value)} placeholder="Название" className={input} />
+                <div className="flex flex-wrap gap-1">
+                  {ICON_SET.map((em) => (
+                    <button key={em} type="button" onClick={() => setEIcon(em)} className={"rounded-lg border px-2 py-1 text-lg " + (eIcon === em ? "border-[#2f80ed] bg-white" : "border-[#e5e7eb] bg-white")}>{em}</button>
+                  ))}
+                </div>
+                <select value={eCat} onChange={(e) => setECat(Number(e.target.value))} className={input}>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  ))}
+                </select>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Начальный баланс (нач.)</span>
+                  <AmountInput value={eInitial} onChange={setEInitial} placeholder="0" />
+                </label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={saveEdit} className="flex-1 rounded-lg bg-[#2f80ed] py-2 text-sm font-bold text-white">Сохранить</button>
+                  <button type="button" onClick={() => setEditId(null)} className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm">Отмена</button>
+                </div>
+              </div>
+            ) : (
+              <div key={a.id} className={"rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-3 " + (a.archived ? "opacity-60" : "")}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{a.icon}</span>
+                    <div>
+                      <div className="text-sm font-bold">{a.name}</div>
+                      <div className="text-[11px] text-[#9ca3af]">
+                        {categories.find((c) => c.id === a.categoryId)?.name ?? "—"} · нач.{" "}
+                        <Amt>{fmtNum(a.initialBalance)}</Amt> ₸
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-base font-extrabold tabular-nums"><Amt>{fmtNum(a.balance)}</Amt></div>
+                    <div className="mt-0.5 flex justify-end gap-2 text-[11px]">
+                      <button type="button" onClick={() => startEdit(a)} className="text-[#2f80ed]">✏️ изменить</button>
+                      <button type="button" onClick={() => patchAccount({ id: a.id, archived: !a.archived })} className="text-[#9ca3af] underline">
+                        {a.archived ? "восстановить" : "в архив"}
+                      </button>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-base font-extrabold tabular-nums"><Amt>{fmtNum(a.balance)}</Amt></div>
-                  <button
-                    type="button"
-                    onClick={() => toggleArchive(a)}
-                    className="text-[11px] text-[#9ca3af] underline"
-                  >
-                    {a.archived ? "восстановить" : "в архив"}
-                  </button>
-                </div>
               </div>
-              <select
-                value={a.categoryId ?? ""}
-                onChange={(e) => changeCategory(a.id, Number(e.target.value))}
-                className="mt-2 w-full rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-2 text-sm"
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.icon} {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </div>
 
+      {/* Категории */}
       <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
-          Добавить счёт
-        </div>
-        <Label>Название</Label>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Каспи Голд" className={input} />
-        <Label>Категория</Label>
-        <select value={categoryId} onChange={(e) => setCategoryId(Number(e.target.value))} className={input}>
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">Категории</div>
+        <div className="space-y-2">
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.icon} {c.name}
-            </option>
+            <div key={c.id} className="flex items-center gap-2">
+              <span className="w-6 text-center text-lg">{c.icon}</span>
+              <input
+                defaultValue={c.name}
+                onBlur={(e) => renameCategory(c.id, e.target.value, c.name)}
+                className="flex-1 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1.5 text-sm"
+              />
+            </div>
           ))}
-        </select>
-        <Label>Иконка</Label>
-        <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🍊" maxLength={4} className={input} />
-        <Label>Начальный баланс (₸)</Label>
-        <AmountInput value={initial} onChange={setInitial} placeholder="0" />
-        <button
-          type="button"
-          onClick={addAccount}
-          className="mt-4 w-full rounded-xl bg-[#f2994a] py-3.5 text-base font-extrabold text-white active:bg-[#e07f30]"
-        >
-          ＋ Добавить счёт
-        </button>
+        </div>
+        <div className="mt-2 flex gap-2">
+          <input value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="Новая категория" className={input} />
+          <button type="button" onClick={addCategory} className="shrink-0 rounded-lg bg-[#f2994a] px-4 text-sm font-semibold text-white">+ Категория</button>
+        </div>
       </div>
     </>
   );

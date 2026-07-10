@@ -60,6 +60,20 @@ export function findOps(filters: { from?: string; to?: string; accountId?: numbe
     .orderBy(desc(finOps.date), desc(finOps.id));
 }
 
+export function recentOps(limit: number) {
+  return db
+    .select({
+      id: finOps.id,
+      date: finOps.date,
+      type: finOps.type,
+      amount: finOps.amount,
+      accountId: finOps.accountId,
+    })
+    .from(finOps)
+    .orderBy(desc(finOps.id))
+    .limit(limit);
+}
+
 export function createOp(values: OpValues) {
   return db.insert(finOps).values(values).returning();
 }

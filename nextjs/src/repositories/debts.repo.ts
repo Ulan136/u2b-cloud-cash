@@ -79,6 +79,22 @@ export function deleteById(id: number) {
   return db.delete(debts).where(eq(debts.id, id));
 }
 
+// Последние записи (для дашборда)
+export function recent(limit: number) {
+  return db
+    .select({
+      id: debts.id,
+      date: debts.date,
+      debtAmount: debts.debtAmount,
+      paymentAmount: debts.paymentAmount,
+      clientName: clients.name,
+    })
+    .from(debts)
+    .leftJoin(clients, eq(clients.id, debts.clientId))
+    .orderBy(desc(debts.id))
+    .limit(limit);
+}
+
 // Итоги по всем долгам за всё время (для «Общий долг»)
 export function grandTotals() {
   return db

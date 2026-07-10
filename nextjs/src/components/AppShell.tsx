@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const ITEMS = [
+  { href: "/", icon: "🏠", label: "Дашборд" },
   { href: "/kassa", icon: "💵", label: "Касса" },
   { href: "/dolgi", icon: "🤝", label: "Долги" },
   { href: "/salary", icon: "💰", label: "Зарплата" },
@@ -43,10 +44,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
 
-  // На редиректе главной ничего не показываем
-  if (pathname === "/") return <>{children}</>;
-
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <>

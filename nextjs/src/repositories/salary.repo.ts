@@ -59,6 +59,14 @@ export function amountsInPeriod(from: string, to: string) {
   return db.select({ amount: salary.amount }).from(salary).where(period(from, to));
 }
 
+export function recent(limit: number) {
+  return db
+    .select({ id: salary.id, date: salary.date, employee: salary.employee, amount: salary.amount })
+    .from(salary)
+    .orderBy(desc(salary.id))
+    .limit(limit);
+}
+
 export function create(values: SalaryValues) {
   return db.insert(salary).values(values).returning();
 }

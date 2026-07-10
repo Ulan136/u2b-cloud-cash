@@ -1,6 +1,19 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cashExpenses } from "@/db/schema";
+
+export function recent(limit: number) {
+  return db
+    .select({
+      id: cashExpenses.id,
+      date: cashExpenses.date,
+      category: cashExpenses.category,
+      amount: cashExpenses.amount,
+    })
+    .from(cashExpenses)
+    .orderBy(desc(cashExpenses.id))
+    .limit(limit);
+}
 
 export type ExpenseValues = typeof cashExpenses.$inferInsert;
 
