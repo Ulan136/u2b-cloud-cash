@@ -79,6 +79,16 @@ export function deleteById(id: number) {
   return db.delete(debts).where(eq(debts.id, id));
 }
 
+// Итоги по всем долгам за всё время (для «Общий долг»)
+export function grandTotals() {
+  return db
+    .select({
+      debt: sql<string>`COALESCE(SUM(${debts.debtAmount}), 0)`,
+      payment: sql<string>`COALESCE(SUM(${debts.paymentAmount}), 0)`,
+    })
+    .from(debts);
+}
+
 export function findInPeriod(from: string, to: string) {
   return db
     .select({
