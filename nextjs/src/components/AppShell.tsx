@@ -106,9 +106,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
       </aside>
 
-      {/* ── Телефон: нижняя панель ── */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e5e7eb] bg-white/95 backdrop-blur lg:hidden">
-        <div className="flex">
+      {/* ── Телефон: нижняя панель (прокручивается, если вкладок много) ── */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 overflow-x-auto border-t border-[#e5e7eb] bg-white/95 backdrop-blur lg:hidden">
+        <div className="flex min-w-max">
           {ITEMS.map((it) => {
             const active = isActive(it.href);
             return (
@@ -117,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={it.href}
                 prefetch
                 className={
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 border-t-2 py-2 text-[11px] " +
+                  "flex min-w-[3.6rem] flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap border-t-2 px-1 py-2 text-[10px] " +
                   (active
                     ? "border-[#2f80ed] text-[#2f80ed]"
                     : "border-transparent text-[#6b7280]")
