@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/kons", icon: "📦", label: "КОНС" },
   { href: "/finance", icon: "🏦", label: "Финансы" },
   { href: "/reports", icon: "📊", label: "Отчёты" },
+  { href: "/settings", icon: "⚙️", label: "Настройки" },
 ];
 
 /**

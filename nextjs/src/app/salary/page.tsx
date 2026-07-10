@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
 
 type ByEmployee = { employee: string; total: number; count: number };
 type Entry = { id: number; date: string; employee: string; amount: string; comment: string | null };
@@ -46,7 +47,7 @@ export default function SalaryPage() {
   const { hidden, toggle } = useHideAmounts("hideSalary");
   const money = (n: number) => (hidden ? "••••••" : fmt(n));
 
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [dirEmployees, setDirEmployees] = useState<DirItem[]>([]);
   const [byEmployee, setByEmployee] = useState<ByEmployee[]>([]);
   const [totalPeriod, setTotalPeriod] = useState(0);
   const [dayTotal, setDayTotal] = useState(0);
@@ -78,9 +79,20 @@ export default function SalaryPage() {
     setByEmployee(d.byEmployee ?? []);
     setTotalPeriod(d.totalPeriod ?? 0);
     setDayTotal(d.dayTotal ?? 0);
-    setEmployees(d.employees ?? []);
     setEntries(d.entries ?? []);
   }, [from, to, today]);
+
+  const loadDir = useCallback(async () => {
+    const res = await fetch("/api/settings/employees?archived=0");
+    const d = await res.json();
+    setDirEmployees(
+      (d.items ?? []).map((i: { id: number; name: string; phone: string | null }) => ({
+        id: i.id,
+        name: i.name,
+        phone: i.phone,
+      }))
+    );
+  }, []);
 
   const loadHistory = useCallback(async (employee: string) => {
     const res = await fetch(`/api/salary?employee=${encodeURIComponent(employee)}`);
@@ -89,9 +101,24 @@ export default function SalaryPage() {
   }, []);
 
   const load = useCallback(async () => {
-    await loadReport();
+    await Promise.all([loadReport(), loadDir()]);
     if (selectedRef.current) await loadHistory(selectedRef.current);
-  }, [loadReport, loadHistory]);
+  }, [loadReport, loadDir, loadHistory]);
+
+  async function createEmployee(name: string, phone: string): Promise<DirItem | null> {
+    const res = await fetch("/api/settings/employees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone }),
+    });
+    if (!res.ok) {
+      setStatus(res.status === 409 ? "Такой работник уже есть" : "Ошибка создания");
+      return null;
+    }
+    const { item } = await res.json();
+    await loadDir();
+    return { id: item.id, name: item.name, phone: item.phone };
+  }
 
   const { refreshing, lastUpdated } = useLiveData("salary", load, [from, to]);
 
@@ -100,14 +127,14 @@ export default function SalaryPage() {
     [byEmployee]
   );
 
-  // Постоянный список ВСЕХ работников (включая 0 за период), сорт по сумме убыв.
+  // Постоянный список ВСЕХ работников из справочника (включая 0 за период), сорт по сумме убыв.
   const roster = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return employees
-      .filter((e) => !q || e.toLowerCase().includes(q))
-      .map((e) => ({ employee: e, total: byEmpMap.get(e) ?? 0 }))
+    return dirEmployees
+      .filter((e) => !q || e.name.toLowerCase().includes(q))
+      .map((e) => ({ employee: e.name, total: byEmpMap.get(e.name) ?? 0 }))
       .sort((a, b) => b.total - a.total || a.employee.localeCompare(b.employee, "ru"));
-  }, [employees, byEmpMap, search]);
+  }, [dirEmployees, byEmpMap, search]);
 
   function applyPreset(name: string, range: { from: string; to: string }) {
     setPreset(name);
@@ -196,20 +223,15 @@ export default function SalaryPage() {
                     className={input}
                   />
                 </label>
-                <label className="block min-w-[140px] flex-1">
+                <label className="block min-w-[160px] flex-1">
                   <span className="mb-1 block text-[11px] text-neutral-400">Работник</span>
-                  <input
-                    list="salary-employees"
+                  <DirectorySelect
+                    items={dirEmployees}
                     value={formEmployee}
-                    onChange={(e) => setFormEmployee(e.target.value)}
-                    placeholder="Имя (или новый)"
-                    className={input}
+                    onPick={(it) => setFormEmployee(it.name)}
+                    onCreate={createEmployee}
+                    placeholder="Выберите или создайте"
                   />
-                  <datalist id="salary-employees">
-                    {employees.map((e) => (
-                      <option key={e} value={e} />
-                    ))}
-                  </datalist>
                 </label>
                 <label className="block w-28">
                   <span className="mb-1 block text-[11px] text-neutral-400">Сумма</span>

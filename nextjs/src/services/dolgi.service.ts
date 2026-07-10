@@ -59,7 +59,8 @@ export async function deleteEntry(id: number) {
 
 export async function listClients() {
   const rows = await clientsRepo.all();
-  return { clients: rows };
+  // Архивные клиенты скрыты из выпадающих списков форм (история операций сохраняется).
+  return { clients: rows.filter((r) => !r.archived) };
 }
 
 export async function createClient(input: CreateClientInput) {

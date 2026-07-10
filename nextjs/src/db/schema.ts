@@ -14,12 +14,34 @@ export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   phone: text("phone"),
+  comment: text("comment"),
+  archived: boolean("archived").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const firms = pgTable("firms", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Справочник работников (для Зарплаты)
+export const employees = pgTable("employees", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  phone: text("phone"),
+  comment: text("comment"),
+  archived: boolean("archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Справочник поставщиков / фирм (для КОНС)
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  phone: text("phone"),
+  comment: text("comment"),
+  archived: boolean("archived").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

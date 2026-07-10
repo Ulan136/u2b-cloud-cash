@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
 
 type Balance = { supplier: string; prihod: number; rashod: number; ostatok: number };
 type Entry = {
@@ -48,7 +49,7 @@ export default function KonsPage() {
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [totalOstatok, setTotalOstatok] = useState(0);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [dirSuppliers, setDirSuppliers] = useState<DirItem[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
 
   // выбранный поставщик
@@ -77,9 +78,20 @@ export default function KonsPage() {
     const d = await res.json();
     setBalances(d.balances ?? []);
     setTotalOstatok(d.totalOstatok ?? 0);
-    setSuppliers(d.suppliers ?? []);
     setEntries(d.entries ?? []);
   }, [from, to]);
+
+  const loadDir = useCallback(async () => {
+    const res = await fetch("/api/settings/suppliers?archived=0");
+    const d = await res.json();
+    setDirSuppliers(
+      (d.items ?? []).map((i: { id: number; name: string; phone: string | null }) => ({
+        id: i.id,
+        name: i.name,
+        phone: i.phone,
+      }))
+    );
+  }, []);
 
   const loadHistory = useCallback(async (supplier: string) => {
     const res = await fetch(`/api/kons?supplier=${encodeURIComponent(supplier)}`);
@@ -88,20 +100,39 @@ export default function KonsPage() {
   }, []);
 
   const load = useCallback(async () => {
-    await loadAnalysis();
+    await Promise.all([loadAnalysis(), loadDir()]);
     if (selectedRef.current) await loadHistory(selectedRef.current);
-  }, [loadAnalysis, loadHistory]);
+  }, [loadAnalysis, loadDir, loadHistory]);
 
   const { refreshing, lastUpdated } = useLiveData("kons", load, [from, to]);
 
-  // Постоянный список поставщиков с остатком за всё время, сорт по остатку убыв.
+  async function createSupplier(name: string, phone: string): Promise<DirItem | null> {
+    const res = await fetch("/api/settings/suppliers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone }),
+    });
+    if (!res.ok) {
+      setStatus(res.status === 409 ? "Такой поставщик уже есть" : "Ошибка создания");
+      return null;
+    }
+    const { item } = await res.json();
+    await loadDir();
+    return { id: item.id, name: item.name, phone: item.phone };
+  }
+
+  // Постоянный список поставщиков из справочника с остатком за всё время, сорт по остатку убыв.
   const roster = useMemo(() => {
+    const balMap = new Map(balances.map((b) => [b.supplier, b]));
     const q = search.trim().toLowerCase();
-    return balances
-      .filter((b) => !q || b.supplier.toLowerCase().includes(q))
-      .slice()
+    return dirSuppliers
+      .filter((s) => !q || s.name.toLowerCase().includes(q))
+      .map((s) => {
+        const b = balMap.get(s.name);
+        return { supplier: s.name, prihod: b?.prihod ?? 0, rashod: b?.rashod ?? 0, ostatok: b?.ostatok ?? 0 };
+      })
       .sort((a, b) => b.ostatok - a.ostatok);
-  }, [balances, search]);
+  }, [dirSuppliers, balances, search]);
 
   function applyPreset(name: string, range: { from: string; to: string }) {
     setPreset(name);
@@ -178,20 +209,15 @@ export default function KonsPage() {
                   <span className="mb-1 block text-[11px] text-neutral-400">Дата</span>
                   <input type="date" value={recordDate} onChange={(e) => setRecordDate(e.target.value)} className={input} />
                 </label>
-                <label className="block min-w-[140px] flex-1">
+                <label className="block min-w-[160px] flex-1">
                   <span className="mb-1 block text-[11px] text-neutral-400">Поставщик</span>
-                  <input
-                    list="kons-suppliers"
+                  <DirectorySelect
+                    items={dirSuppliers}
                     value={formSupplier}
-                    onChange={(e) => setFormSupplier(e.target.value)}
-                    placeholder="Название (или новый)"
-                    className={input}
+                    onPick={(it) => setFormSupplier(it.name)}
+                    onCreate={createSupplier}
+                    placeholder="Выберите или создайте"
                   />
-                  <datalist id="kons-suppliers">
-                    {suppliers.map((s) => (
-                      <option key={s} value={s} />
-                    ))}
-                  </datalist>
                 </label>
                 <label className="block w-24">
                   <span className="mb-1 block text-[11px] text-neutral-400">Приход</span>
