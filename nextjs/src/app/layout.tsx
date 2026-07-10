@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { SWRegister } from "./sw-register";
-import { Nav } from "@/components/Nav";
+import { AppShell } from "@/components/AppShell";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -47,9 +47,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Nav />
-        {/* отступ снизу под фиксированную мобильную панель; на десктопе панель сверху */}
-        <div className="pb-20 lg:pb-0">{children}</div>
+        <AppShell>{children}</AppShell>
         <SWRegister />
       </body>
     </html>
