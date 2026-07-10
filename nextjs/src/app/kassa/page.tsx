@@ -216,16 +216,16 @@ export default function KassaPage() {
   const inputRow = (key: DayKey, label: string) => (
     <div
       className="flex h-10 items-center border-l-4"
-      style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "rgba(16,64,36,0.18)" }}
+      style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
     >
-      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-neutral-300">{label}</span>
+      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">{label}</span>
       <input
         inputMode="decimal"
         value={day[key]}
         onChange={(e) => setField(key, e.target.value)}
         placeholder="0"
         disabled={closed}
-        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30 disabled:opacity-60"
+        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
       />
     </div>
   );
@@ -234,23 +234,23 @@ export default function KassaPage() {
     <div
       className={
         "flex h-10 items-center border-l-4 border-transparent " +
-        (highlight ? "bg-neutral-800" : "bg-neutral-900/40")
+        (highlight ? "bg-[#f3f4f6]" : "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]")
       }
     >
-      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-neutral-400">{label}</span>
+      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#6b7280]">{label}</span>
       <span className="w-32 pr-3 text-right text-sm font-semibold tabular-nums">{fmt(value)}</span>
     </div>
   );
 
   const mp = calc.minPlus;
-  const mpColor = mp < 0 ? "text-red-400" : mp > 0 ? "text-orange-400" : "text-cyan-400";
+  const mpColor = mp < 0 ? "text-[#eb5757]" : mp > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-3 py-4">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-3 py-4">
       <div className="mx-auto w-full max-w-4xl">
         <header className="mb-3 flex items-center gap-2">
           <h1 className="text-xl font-bold">Касса</h1>
-          <span className="ml-auto flex items-center gap-2 text-xs text-neutral-500">
+          <span className="ml-auto flex items-center gap-2 text-xs text-[#9ca3af]">
             {status && <span>{status}</span>}
             {loading ? (
               <span>загрузка…</span>
@@ -266,7 +266,7 @@ export default function KassaPage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm"
+            className="flex-1 rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm"
           />
           {closed && (
             <span className="shrink-0 rounded-lg border border-cyan-800 bg-cyan-950/40 px-3 py-2 text-xs font-semibold text-cyan-300">
@@ -282,7 +282,7 @@ export default function KassaPage() {
         {/* Две колонки: слева касса, справа расходы */}
         <div className="grid gap-3 md:grid-cols-2">
           {/* ЛЕВАЯ — таблица дня */}
-          <div className="overflow-hidden rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+          <div className="overflow-hidden rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
             {inputRow("klaudObshch", "касса Claud")}
             {autoRow("ОБЩ РЕАЛ", calc.obshchReal, true)}
             {inputRow("nalichnye", "НАЛИЧНЫЕ")}
@@ -294,8 +294,8 @@ export default function KassaPage() {
             {autoRow("Расход", calc.rashod)}
             {inputRow("zakupTovar", "закуп товар")}
             {autoRow("Возврат долг", calc.vozvratDolg)}
-            <div className="flex h-14 items-center border-l-4 border-transparent bg-neutral-900">
-              <span className="flex-1 pl-3 pr-2 text-sm font-bold text-neutral-300">МИН/ПЛЮС</span>
+            <div className="flex h-14 items-center border-l-4 border-transparent bg-[#eaf1fd]">
+              <span className="flex-1 pl-3 pr-2 text-sm font-bold text-[#1f2933]">МИН/ПЛЮС</span>
               <span className={"w-36 pr-3 text-right text-2xl font-extrabold tabular-nums " + mpColor}>
                 {mp > 0 ? "+" : ""}
                 {fmt(mp)}
@@ -306,19 +306,19 @@ export default function KassaPage() {
           {/* ПРАВАЯ — расходы фиксированным списком */}
           <div>
             <div className="mb-1 flex items-center justify-between px-1">
-              <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                 Расходы дня
               </span>
-              <span className="text-xs tabular-nums text-neutral-300">Σ {fmt(expensesTotal)}</span>
+              <span className="text-xs tabular-nums text-[#374151]">Σ {fmt(expensesTotal)}</span>
             </div>
-            <div className="overflow-hidden rounded-xl border border-neutral-800 divide-y divide-neutral-800">
+            <div className="overflow-hidden rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
               {displayCats.map((cat) => (
                 <div key={cat}>
                   <div
                     className="flex h-10 items-center"
-                    style={{ background: "rgba(16,64,36,0.18)" }}
+                    style={{ background: "#f2f7ff" }}
                   >
-                    <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-neutral-300">
+                    <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">
                       {cat}
                     </span>
                     <button
@@ -330,8 +330,8 @@ export default function KassaPage() {
                       className={
                         "px-1 text-xs " +
                         (exp[cat]?.comment || openComments[cat]
-                          ? "text-emerald-400"
-                          : "text-neutral-600 hover:text-neutral-300")
+                          ? "text-[#27ae60]"
+                          : "text-[#b0b6bf] hover:text-[#374151]")
                       }
                     >
                       💬
@@ -342,7 +342,7 @@ export default function KassaPage() {
                       onChange={(e) => updateExp(cat, { amount: e.target.value })}
                       placeholder="0"
                       disabled={closed}
-                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30 disabled:opacity-60"
+                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
                     />
                   </div>
                   {openComments[cat] && (
@@ -351,7 +351,7 @@ export default function KassaPage() {
                       onChange={(e) => updateExp(cat, { comment: e.target.value })}
                       placeholder="комментарий"
                       disabled={closed}
-                      className="w-full bg-neutral-900 px-3 py-1.5 text-xs outline-none disabled:opacity-60"
+                      className="w-full bg-white px-3 py-1.5 text-xs outline-none disabled:opacity-60"
                     />
                   )}
                 </div>
@@ -366,7 +366,7 @@ export default function KassaPage() {
           onChange={(e) => setField("comment", e.target.value)}
           placeholder="Комментарий дня"
           disabled={closed}
-          className="mt-3 w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm disabled:opacity-60"
+          className="mt-3 w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm disabled:opacity-60"
         />
 
         {/* Кнопки: черновик + закрытие, либо переоткрытие */}
@@ -375,7 +375,7 @@ export default function KassaPage() {
             type="button"
             onClick={() => submit("reopen")}
             disabled={saving}
-            className="mt-3 w-full rounded-lg border border-neutral-700 bg-neutral-900 py-3 text-base font-semibold text-neutral-200 disabled:opacity-50 active:bg-neutral-800"
+            className="mt-3 w-full rounded-lg border border-[#e5e7eb] bg-white py-3 text-base font-semibold text-[#1f2933] disabled:opacity-50 active:bg-[#f3f4f6]"
           >
             🔓 Переоткрыть смену
           </button>
@@ -385,7 +385,7 @@ export default function KassaPage() {
               type="button"
               onClick={() => submit("save")}
               disabled={saving || loading}
-              className="rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white disabled:opacity-50 active:bg-emerald-700"
+              className="rounded-lg bg-[#2f80ed] py-3 text-base font-semibold text-white disabled:opacity-50 active:bg-[#2568c9]"
             >
               {saving ? "…" : "Сохранить"}
             </button>
@@ -393,7 +393,7 @@ export default function KassaPage() {
               type="button"
               onClick={() => submit("close")}
               disabled={saving || loading}
-              className="rounded-lg bg-teal-500 py-3 text-base font-extrabold text-white disabled:opacity-50 active:bg-teal-600"
+              className="rounded-lg bg-[#17b6a7] py-3 text-base font-extrabold text-white disabled:opacity-50 active:bg-[#0f9b8e]"
             >
               ЗАКРЫТЬ СМЕНУ
             </button>
@@ -402,12 +402,12 @@ export default function KassaPage() {
 
         {/* Архив дней */}
         <section className="mt-5">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
             Архив дней
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {archive.map((d) => {
-              const c = d.minPlus < 0 ? "text-red-400" : d.minPlus > 0 ? "text-orange-400" : "text-cyan-400";
+              const c = d.minPlus < 0 ? "text-[#eb5757]" : d.minPlus > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
               return (
                 <button
                   key={d.date}
@@ -416,11 +416,11 @@ export default function KassaPage() {
                   className={
                     "shrink-0 rounded-lg border px-3 py-2 text-center " +
                     (d.date === date
-                      ? "border-emerald-600 bg-emerald-600/10"
-                      : "border-neutral-800 bg-neutral-900")
+                      ? "border-[#2f80ed] bg-[#2f80ed]/10"
+                      : "border-[#e5e7eb] bg-white")
                   }
                 >
-                  <div className="text-[11px] text-neutral-400">{d.date.slice(5)}</div>
+                  <div className="text-[11px] text-[#6b7280]">{d.date.slice(5)}</div>
                   <div className={"text-sm font-bold tabular-nums " + c}>
                     {d.minPlus > 0 ? "+" : ""}
                     {fmt(d.minPlus)}
@@ -429,7 +429,7 @@ export default function KassaPage() {
               );
             })}
             {archive.length === 0 && (
-              <span className="py-3 text-sm text-neutral-500">Нет сохранённых дней</span>
+              <span className="py-3 text-sm text-[#9ca3af]">Нет сохранённых дней</span>
             )}
           </div>
         </section>

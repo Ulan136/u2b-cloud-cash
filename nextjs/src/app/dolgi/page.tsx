@@ -35,8 +35,8 @@ function todayStr() {
   return local.toISOString().slice(0, 10);
 }
 const input =
-  "w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
-const panel = "rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4";
+  "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
+const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
 export default function DolgiPage() {
   const today = useMemo(() => todayStr(), []);
@@ -221,7 +221,7 @@ export default function DolgiPage() {
   const sortMark = (k: SortKey) => (sortKey === k ? (sortDir === "asc" ? " ▲" : " ▼") : "");
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-6xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">Долги</h1>
@@ -236,7 +236,7 @@ export default function DolgiPage() {
             {/* Выбор клиента */}
             <div className={panel}>
               <div ref={comboRef} className="relative">
-                <span className="mb-1 block text-xs text-neutral-400">Клиент</span>
+                <span className="mb-1 block text-xs text-[#6b7280]">Клиент</span>
                 <div className="flex gap-2">
                   <input
                     value={clientQuery}
@@ -251,23 +251,23 @@ export default function DolgiPage() {
                   <button
                     type="button"
                     onClick={() => setShowNew((v) => !v)}
-                    className="shrink-0 rounded-lg bg-neutral-800 border border-neutral-700 px-3 text-sm"
+                    className="shrink-0 rounded-lg border border-[#f2994a] px-3 text-sm font-semibold text-[#f2994a]"
                   >
                     + новый
                   </button>
                 </div>
                 {menuOpen && filteredClients.length > 0 && (
-                  <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-neutral-700 bg-neutral-900 shadow-xl">
+                  <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-[#e5e7eb] bg-white shadow-xl">
                     {filteredClients.map((c) => (
                       <li key={c.id}>
                         <button
                           type="button"
                           onClick={() => selectClient(c)}
-                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-neutral-800"
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#f3f4f6]"
                         >
                           <span>{c.name}</span>
                           {c.phone ? (
-                            <span className="text-xs text-neutral-500">{c.phone}</span>
+                            <span className="text-xs text-[#9ca3af]">{c.phone}</span>
                           ) : null}
                         </button>
                       </li>
@@ -277,7 +277,7 @@ export default function DolgiPage() {
               </div>
 
               {showNew && (
-                <div className="mt-2 space-y-2 rounded-lg border border-neutral-700 bg-neutral-900 p-3">
+                <div className="mt-2 space-y-2 rounded-lg border border-[#e5e7eb] bg-white p-3">
                   <input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
@@ -294,7 +294,7 @@ export default function DolgiPage() {
                   <button
                     type="button"
                     onClick={createClient}
-                    className="w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white"
+                    className="w-full rounded-lg bg-[#f2994a] py-2 text-sm font-semibold text-white"
                   >
                     Добавить клиента
                   </button>
@@ -309,19 +309,19 @@ export default function DolgiPage() {
                   <div>
                     <div className="text-lg font-bold">{selected.name}</div>
                     {selectedPhone && (
-                      <div className="text-xs text-neutral-500">{selectedPhone}</div>
+                      <div className="text-xs text-[#9ca3af]">{selectedPhone}</div>
                     )}
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase text-neutral-400">Остаток</div>
+                    <div className="text-[10px] uppercase text-[#6b7280]">Остаток</div>
                     <div
                       className={
                         "text-2xl font-extrabold tabular-nums " +
                         (clientOstatok > 0
-                          ? "text-red-400"
+                          ? "text-[#eb5757]"
                           : clientOstatok < 0
-                            ? "text-emerald-400"
-                            : "text-neutral-300")
+                            ? "text-[#27ae60]"
+                            : "text-[#374151]")
                       }
                     >
                       {fmt(clientOstatok)}
@@ -329,9 +329,9 @@ export default function DolgiPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 overflow-x-auto rounded-lg border border-neutral-800">
+                <div className="mt-2 overflow-x-auto rounded-lg border border-[#e5e7eb]">
                   <table className="w-full text-xs tabular-nums">
-                    <thead className="bg-neutral-900 text-neutral-400">
+                    <thead className="bg-white text-[#6b7280]">
                       <tr>
                         <th className="px-2 py-1.5 text-left font-medium">Дата</th>
                         <th className="px-2 py-1.5 text-right font-medium">Долг</th>
@@ -342,34 +342,34 @@ export default function DolgiPage() {
                     </thead>
                     <tbody>
                       {(history ?? []).map((h) => (
-                        <tr key={h.id} className="border-t border-neutral-800">
-                          <td className="px-2 py-1.5 text-left text-neutral-400">
+                        <tr key={h.id} className="border-t border-[#e5e7eb]">
+                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
                             {h.date}
                             {h.returnDate && (
                               <span
                                 className={
                                   "ml-1 " +
-                                  (h.returnDate < today ? "text-red-400" : "text-neutral-500")
+                                  (h.returnDate < today ? "text-[#eb5757]" : "text-[#9ca3af]")
                                 }
                               >
                                 (↩{h.returnDate})
                               </span>
                             )}
                           </td>
-                          <td className="px-2 py-1.5 text-right text-red-400">
+                          <td className="px-2 py-1.5 text-right text-[#eb5757]">
                             {num(h.debtAmount) ? fmt(num(h.debtAmount)) : ""}
                           </td>
-                          <td className="px-2 py-1.5 text-right text-emerald-400">
+                          <td className="px-2 py-1.5 text-right text-[#27ae60]">
                             {num(h.paymentAmount) ? fmt(num(h.paymentAmount)) : ""}
                           </td>
-                          <td className="px-2 py-1.5 text-left text-neutral-400">
+                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
                             {h.comment}
                           </td>
                           <td className="px-1 py-1.5 text-right">
                             <button
                               type="button"
                               onClick={() => removeEntry(h.id)}
-                              className="text-neutral-600 hover:text-red-400"
+                              className="text-[#b0b6bf] hover:text-[#eb5757]"
                               aria-label="Удалить"
                             >
                               ✕
@@ -379,7 +379,7 @@ export default function DolgiPage() {
                       ))}
                       {history !== null && history.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-2 py-3 text-center text-neutral-500">
+                          <td colSpan={5} className="px-2 py-3 text-center text-[#9ca3af]">
                             Записей нет
                           </td>
                         </tr>
@@ -389,19 +389,19 @@ export default function DolgiPage() {
                 </div>
               </div>
             ) : (
-              <div className={panel + " text-center text-sm text-neutral-500"}>
+              <div className={panel + " text-center text-sm text-[#9ca3af]"}>
                 Выберите клиента слева или справа в таблице
               </div>
             )}
 
             {/* Форма внесения */}
             <div className={panel}>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                 Внести {selected ? `— ${selected.name}` : ""}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block">
-                  <span className="mb-1 block text-xs text-neutral-400">Долг (взял)</span>
+                  <span className="mb-1 block text-xs text-[#6b7280]">Долг (взял)</span>
                   <input
                     inputMode="decimal"
                     value={debtAmount}
@@ -411,7 +411,7 @@ export default function DolgiPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-xs text-neutral-400">Оплата (вернул)</span>
+                  <span className="mb-1 block text-xs text-[#6b7280]">Оплата (вернул)</span>
                   <input
                     inputMode="decimal"
                     value={paymentAmount}
@@ -429,7 +429,7 @@ export default function DolgiPage() {
               />
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <label className="block">
-                  <span className="mb-1 block text-xs text-neutral-400">Дата возврата</span>
+                  <span className="mb-1 block text-xs text-[#6b7280]">Дата возврата</span>
                   <input
                     type="date"
                     value={returnDate}
@@ -438,7 +438,7 @@ export default function DolgiPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-xs text-neutral-400">Дата записи</span>
+                  <span className="mb-1 block text-xs text-[#6b7280]">Дата записи</span>
                   <input
                     type="date"
                     value={recordDate}
@@ -451,36 +451,36 @@ export default function DolgiPage() {
                 type="button"
                 onClick={save}
                 disabled={saving}
-                className="mt-3 w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50 active:bg-emerald-700"
+                className="mt-3 w-full rounded-lg bg-[#2f80ed] py-2.5 text-sm font-semibold text-white disabled:opacity-50 active:bg-[#2568c9]"
               >
                 {saving ? "Запись…" : "Записать"}
               </button>
-              {status && <p className="mt-2 text-center text-xs text-neutral-300">{status}</p>}
+              {status && <p className="mt-2 text-center text-xs text-[#374151]">{status}</p>}
             </div>
           </section>
 
           {/* ПРАВАЯ ПАНЕЛЬ — анализ */}
           <section className={panel + " space-y-3"}>
-            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
               Анализ остатков
             </div>
             {/* ОБЩИЙ ОСТАТОК — крупно сверху */}
-            <div className="rounded-xl border border-red-900/60 bg-red-950/25 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+            <div className="rounded-xl border border-[#f5c6c6] bg-[#fdecec] p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                 Общий остаток (на руках у клиентов)
                 {search || statusFilter !== "all" ? " · по фильтру" : ""}
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-red-400">
+              <div className="text-2xl font-extrabold tabular-nums text-[#eb5757]">
                 {fmt(search || statusFilter !== "all" ? shownTotal : totalOstatok)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
-                <span className="mb-1 block text-[11px] text-neutral-500">период с</span>
+                <span className="mb-1 block text-[11px] text-[#9ca3af]">период с</span>
                 <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={input} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-[11px] text-neutral-500">по</span>
+                <span className="mb-1 block text-[11px] text-[#9ca3af]">по</span>
                 <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={input} />
               </label>
             </div>
@@ -505,8 +505,8 @@ export default function DolgiPage() {
                   className={
                     "flex-1 rounded-lg border py-1.5 text-xs font-semibold " +
                     (statusFilter === k
-                      ? "border-emerald-600 bg-emerald-600/20 text-emerald-300"
-                      : "border-neutral-800 bg-neutral-900 text-neutral-400")
+                      ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                      : "border-[#e5e7eb] bg-white text-[#6b7280]")
                   }
                 >
                   {label}
@@ -514,9 +514,9 @@ export default function DolgiPage() {
               ))}
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-800">
+            <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
               <table className="w-full text-sm tabular-nums">
-                <thead className="bg-neutral-900 text-neutral-400">
+                <thead className="bg-white text-[#6b7280]">
                   <tr>
                     {(
                       [
@@ -529,7 +529,7 @@ export default function DolgiPage() {
                       <th
                         key={k}
                         onClick={() => toggleSort(k)}
-                        className={`cursor-pointer select-none px-3 py-2 font-medium ${align} hover:text-neutral-200`}
+                        className={`cursor-pointer select-none px-3 py-2 font-medium ${align} hover:text-[#1f2933]`}
                       >
                         {label}
                         {sortMark(k)}
@@ -543,24 +543,24 @@ export default function DolgiPage() {
                       key={b.id}
                       onClick={() => selectClient({ id: b.id, name: b.name })}
                       className={
-                        "cursor-pointer border-t border-neutral-800 active:bg-neutral-900 " +
-                        (selected?.id === b.id ? "bg-neutral-800/60" : "")
+                        "cursor-pointer border-t border-[#e5e7eb] active:bg-white " +
+                        (selected?.id === b.id ? "bg-[#eaf1fd]" : "")
                       }
                     >
                       <td className="px-3 py-2 text-left">
                         {b.overdue && <span title="просрочено">🔴 </span>}
                         {b.name}
                       </td>
-                      <td className="px-3 py-2 text-right text-neutral-400">{fmt(b.debts)}</td>
-                      <td className="px-3 py-2 text-right text-neutral-400">{fmt(b.payments)}</td>
+                      <td className="px-3 py-2 text-right text-[#6b7280]">{fmt(b.debts)}</td>
+                      <td className="px-3 py-2 text-right text-[#6b7280]">{fmt(b.payments)}</td>
                       <td
                         className={
                           "px-3 py-2 text-right font-semibold " +
                           (b.ostatok > 0
-                            ? "text-red-400"
+                            ? "text-[#eb5757]"
                             : b.ostatok < 0
-                              ? "text-emerald-400"
-                              : "text-neutral-300")
+                              ? "text-[#27ae60]"
+                              : "text-[#374151]")
                         }
                       >
                         {fmt(b.ostatok)}
@@ -569,7 +569,7 @@ export default function DolgiPage() {
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-neutral-500">
+                      <td colSpan={4} className="px-3 py-4 text-center text-[#9ca3af]">
                         Нет данных
                       </td>
                     </tr>

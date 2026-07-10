@@ -39,8 +39,8 @@ function yearRange() {
 }
 
 const input =
-  "w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
-const panel = "rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4";
+  "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
+const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
 export default function SalaryPage() {
   const today = useMemo(() => todayStr(), []);
@@ -191,7 +191,7 @@ export default function SalaryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-6xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">Зарплата</h1>
@@ -199,7 +199,7 @@ export default function SalaryPage() {
             type="button"
             onClick={toggle}
             title={hidden ? "Показать суммы" : "Скрыть суммы"}
-            className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-sm"
+            className="rounded-lg border border-[#e5e7eb] bg-white px-2.5 py-1.5 text-sm"
           >
             {hidden ? "🙈" : "👁"}
           </button>
@@ -215,7 +215,7 @@ export default function SalaryPage() {
             <div className={panel}>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block w-32">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Дата</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Дата</span>
                   <input
                     type="date"
                     value={recordDate}
@@ -224,7 +224,7 @@ export default function SalaryPage() {
                   />
                 </label>
                 <label className="block min-w-[160px] flex-1">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Работник</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Работник</span>
                   <DirectorySelect
                     items={dirEmployees}
                     value={formEmployee}
@@ -234,7 +234,7 @@ export default function SalaryPage() {
                   />
                 </label>
                 <label className="block w-28">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Сумма</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Сумма</span>
                   <input
                     inputMode="decimal"
                     value={amount}
@@ -244,7 +244,7 @@ export default function SalaryPage() {
                   />
                 </label>
                 <label className="block min-w-[120px] flex-1">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Комментарий</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Комментарий</span>
                   <input
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -256,25 +256,25 @@ export default function SalaryPage() {
                   type="button"
                   onClick={save}
                   disabled={saving}
-                  className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:bg-emerald-700"
+                  className="rounded-lg bg-[#2f80ed] px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:bg-[#2568c9]"
                 >
                   {saving ? "…" : "ВНЕСТИ"}
                 </button>
               </div>
-              {status && <p className="mt-2 text-xs text-neutral-300">{status}</p>}
+              {status && <p className="mt-2 text-xs text-[#374151]">{status}</p>}
             </div>
 
             {/* Журнал за период / история выбранного */}
             <div className={panel}>
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                   {selected ? `История: ${selected}` : "Журнал за период"}
                 </span>
                 {selected && (
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="text-[11px] text-emerald-400 underline"
+                    className="text-[11px] text-[#27ae60] underline"
                   >
                     ← весь журнал
                   </button>
@@ -296,8 +296,8 @@ export default function SalaryPage() {
                         className={
                           "rounded-lg border py-1.5 text-xs font-semibold " +
                           (preset === b.k
-                            ? "border-emerald-600 bg-emerald-600/20 text-emerald-300"
-                            : "border-neutral-800 bg-neutral-900 text-neutral-400")
+                            ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                            : "border-[#e5e7eb] bg-white text-[#6b7280]")
                         }
                       >
                         {b.label}
@@ -311,9 +311,9 @@ export default function SalaryPage() {
                 </>
               )}
 
-              <div className="overflow-x-auto rounded-lg border border-neutral-800">
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
                 <table className="w-full text-xs tabular-nums">
-                  <thead className="bg-neutral-900 text-neutral-400">
+                  <thead className="bg-white text-[#6b7280]">
                     <tr>
                       <th className="px-2 py-1.5 text-left font-medium">Дата</th>
                       {!selected && <th className="px-2 py-1.5 text-left font-medium">Работник</th>}
@@ -325,38 +325,38 @@ export default function SalaryPage() {
                   <tbody>
                     {selected
                       ? (history ?? []).map((h) => (
-                          <tr key={h.id} className="border-t border-neutral-800">
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{h.date}</td>
-                            <td className="px-2 py-1.5 text-right font-semibold text-emerald-400">
+                          <tr key={h.id} className="border-t border-[#e5e7eb]">
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
+                            <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
                               {money(num(h.amount))}
                             </td>
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{h.comment}</td>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
                             <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(h.id)} className="text-neutral-600 hover:text-red-400">✕</button>
+                              <button type="button" onClick={() => removeEntry(h.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
                             </td>
                           </tr>
                         ))
                       : entries.map((e) => (
-                          <tr key={e.id} className="border-t border-neutral-800">
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{e.date}</td>
+                          <tr key={e.id} className="border-t border-[#e5e7eb]">
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
                             <td className="px-2 py-1.5 text-left">
-                              <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-emerald-400">
+                              <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#27ae60]">
                                 {e.employee}
                               </button>
                             </td>
-                            <td className="px-2 py-1.5 text-right font-semibold text-emerald-400">
+                            <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
                               {money(num(e.amount))}
                             </td>
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{e.comment}</td>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
                             <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(e.id)} className="text-neutral-600 hover:text-red-400">✕</button>
+                              <button type="button" onClick={() => removeEntry(e.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
                             </td>
                           </tr>
                         ))}
                     {((selected && history !== null && history.length === 0) ||
                       (!selected && entries.length === 0)) && (
                       <tr>
-                        <td colSpan={selected ? 4 : 5} className="px-2 py-3 text-center text-neutral-500">
+                        <td colSpan={selected ? 4 : 5} className="px-2 py-3 text-center text-[#9ca3af]">
                           Нет выплат
                         </td>
                       </tr>
@@ -370,16 +370,16 @@ export default function SalaryPage() {
           {/* ПРАВАЯ: постоянный список работников */}
           <section className={panel + " space-y-3"}>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-3 text-center">
-                <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+              <div className="rounded-xl border border-[#cfe0fb] bg-[#eef4ff] p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                   Зарплата за период
                 </div>
-                <div className="text-2xl font-extrabold tabular-nums text-emerald-400">
+                <div className="text-2xl font-extrabold tabular-nums text-[#27ae60]">
                   {money(totalPeriod)}
                 </div>
               </div>
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3 text-center">
-                <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+              <div className="rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                   ЗП за день (сегодня)
                 </div>
                 <div className="text-2xl font-extrabold tabular-nums">{money(dayTotal)}</div>
@@ -393,22 +393,22 @@ export default function SalaryPage() {
               className={input}
             />
 
-            <div className="overflow-hidden rounded-lg border border-neutral-800 divide-y divide-neutral-800">
+            <div className="overflow-hidden rounded-lg border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
               {roster.map((r) => (
                 <button
                   key={r.employee}
                   type="button"
                   onClick={() => selectEmployee(r.employee)}
                   className={
-                    "flex w-full items-center justify-between px-3 py-2 text-left text-sm active:bg-neutral-900 " +
-                    (selected === r.employee ? "bg-neutral-800/60" : "")
+                    "flex w-full items-center justify-between px-3 py-2 text-left text-sm active:bg-white " +
+                    (selected === r.employee ? "bg-[#eaf1fd]" : "")
                   }
                 >
                   <span className="truncate">{r.employee}</span>
                   <span
                     className={
                       "ml-2 shrink-0 tabular-nums font-semibold " +
-                      (r.total > 0 ? "text-emerald-400" : "text-neutral-600")
+                      (r.total > 0 ? "text-[#27ae60]" : "text-[#b0b6bf]")
                     }
                   >
                     {money(r.total)}
@@ -416,7 +416,7 @@ export default function SalaryPage() {
                 </button>
               ))}
               {roster.length === 0 && (
-                <div className="px-3 py-4 text-center text-sm text-neutral-500">
+                <div className="px-3 py-4 text-center text-sm text-[#9ca3af]">
                   Пока нет работников
                 </div>
               )}

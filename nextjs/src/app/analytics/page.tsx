@@ -56,7 +56,7 @@ function yearRange() {
   return { from: fmtLocal(new Date(t.getFullYear(), 0, 1)), to: fmtLocal(t) };
 }
 
-const input = "rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
+const input = "rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 
 export default function AnalyticsPage() {
   const initRange = useMemo(() => monthRange(), []);
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-6xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">📈 Анализы</h1>
@@ -132,25 +132,25 @@ export default function AnalyticsPage() {
               className={
                 "rounded-lg border px-3 py-2 text-sm font-semibold " +
                 (preset === b.k
-                  ? "border-emerald-600 bg-emerald-600/20 text-emerald-300"
-                  : "border-neutral-800 bg-neutral-900 text-neutral-400")
+                  ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                  : "border-[#e5e7eb] bg-white text-[#6b7280]")
               }
             >
               {b.label}
             </button>
           ))}
           <input type="date" value={from} onChange={(e) => { setPreset("custom"); setFrom(e.target.value); }} className={input} />
-          <span className="text-neutral-500">—</span>
+          <span className="text-[#9ca3af]">—</span>
           <input type="date" value={to} onChange={(e) => { setPreset("custom"); setTo(e.target.value); }} className={input} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           {/* ЛЕВАЯ — таблица расходов */}
-          <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <section className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
               Расходы за период
             </div>
-            <div className="overflow-hidden rounded-lg border border-neutral-800 divide-y divide-neutral-800">
+            <div className="overflow-hidden rounded-lg border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
               <Row label="ЗАРПЛАТА С КИМБАЙ" value={zarplata + kimbay} strong accent="text-amber-300" bg="bg-amber-950/20" />
               {CATEGORY_ROWS.map((cat) => {
                 const di = (data?.expensesByCategory ?? []).findIndex((c) => c.category === cat);
@@ -164,13 +164,13 @@ export default function AnalyticsPage() {
                   />
                 );
               })}
-              <Row label="ИТОГ без МЕГА" value={itogBezMega} strong accent="text-emerald-300" bg="bg-emerald-950/25" />
-              <div className="h-1 bg-neutral-900" />
-              <Row label="Долг (за период)" value={data?.period.debtIssued ?? 0} accent="text-red-400" />
-              <Row label="Оплата (за период)" value={data?.period.debtReceived ?? 0} accent="text-emerald-400" />
-              <div className="h-1 bg-neutral-900" />
+              <Row label="ИТОГ без МЕГА" value={itogBezMega} strong accent="text-[#2f80ed]" bg="bg-[#eef4ff]" />
+              <div className="h-1 bg-white" />
+              <Row label="Долг (за период)" value={data?.period.debtIssued ?? 0} accent="text-[#eb5757]" />
+              <Row label="Оплата (за период)" value={data?.period.debtReceived ?? 0} accent="text-[#27ae60]" />
+              <div className="h-1 bg-white" />
               <Row label="Общий конс (за всё время)" value={data?.grand.konsOstatok ?? 0} strong accent="text-violet-400" />
-              <Row label="Общий долг (за всё время)" value={data?.grand.clientsOstatok ?? 0} strong accent="text-red-400" />
+              <Row label="Общий долг (за всё время)" value={data?.grand.clientsOstatok ?? 0} strong accent="text-[#eb5757]" />
             </div>
           </section>
 
@@ -205,15 +205,15 @@ function Row({
 }) {
   return (
     <div className={"flex h-9 items-center px-3 " + (bg ?? "")}>
-      <span className="flex flex-1 items-center gap-2 truncate text-[13px] text-neutral-300">
+      <span className="flex flex-1 items-center gap-2 truncate text-[13px] text-[#374151]">
         {dot && <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: dot }} />}
-        <span className={strong ? "font-bold text-neutral-100" : ""}>{label}</span>
+        <span className={strong ? "font-bold text-[#1f2933]" : ""}>{label}</span>
       </span>
       <span
         className={
           "tabular-nums " +
           (strong ? "text-base font-extrabold " : "text-sm ") +
-          (accent ?? (muted ? "text-neutral-600" : "text-neutral-200"))
+          (accent ?? (muted ? "text-[#b0b6bf]" : "text-[#1f2933]"))
         }
       >
         {fmt(value)}
@@ -241,22 +241,22 @@ function ChartCard({
     .map((s) => ({ ...s, pct: total > 0 ? (s.value / total) * 100 : 0 }));
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">{title}</div>
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">{title}</div>
       <div className="flex items-center gap-4">
         <Donut segments={segments} pie={!donut} center={donut ? fmt(total) : undefined} />
         <div className="min-w-0 flex-1 space-y-1">
           {legend.map((s) => (
             <div key={s.label} className="flex items-center gap-2 text-sm">
               <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} />
-              <span className="min-w-0 flex-1 truncate text-neutral-300">{s.label}</span>
-              <span className="tabular-nums text-neutral-200">{fmt(s.value)}</span>
-              <span className="w-12 text-right tabular-nums text-neutral-500">
+              <span className="min-w-0 flex-1 truncate text-[#374151]">{s.label}</span>
+              <span className="tabular-nums text-[#1f2933]">{fmt(s.value)}</span>
+              <span className="w-12 text-right tabular-nums text-[#9ca3af]">
                 {s.pct.toFixed(1)}%
               </span>
             </div>
           ))}
-          {legend.length === 0 && <div className="text-sm text-neutral-500">Нет данных</div>}
+          {legend.length === 0 && <div className="text-sm text-[#9ca3af]">Нет данных</div>}
         </div>
       </div>
     </div>
@@ -285,7 +285,7 @@ function Donut({
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="shrink-0">
       {total <= 0 ? (
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#3f3f46" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
       ) : (
         <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
           {segments.map((seg, i) => {
@@ -316,7 +316,7 @@ function Donut({
           y={size / 2}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="#e5e5e5"
+          fill="#1f2933"
           fontSize="11"
           fontWeight="700"
         >

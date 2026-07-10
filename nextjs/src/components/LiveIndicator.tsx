@@ -4,7 +4,7 @@
 export function LiveIndicator({
   lastUpdated,
   refreshing,
-  className = "text-neutral-500",
+  className = "text-[#9ca3af]",
 }: {
   lastUpdated: number | null;
   refreshing?: boolean;

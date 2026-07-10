@@ -64,7 +64,7 @@ export function DirectorySelect({
   }
 
   const inputCls =
-    className ?? "w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
+    className ?? "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 
   return (
     <div ref={ref} className="relative">
@@ -83,7 +83,7 @@ export function DirectorySelect({
         className={inputCls}
       />
       {open && (
-        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-neutral-700 bg-neutral-900 shadow-xl">
+        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-[#e5e7eb] bg-white shadow-xl">
           {filtered.map((i) => (
             <button
               key={i.id}
@@ -93,14 +93,14 @@ export function DirectorySelect({
                 setQuery(i.name);
                 setOpen(false);
               }}
-              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-neutral-800"
+              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#f3f4f6]"
             >
               <span className="truncate">{i.name}</span>
-              {i.phone ? <span className="ml-2 shrink-0 text-xs text-neutral-500">{i.phone}</span> : null}
+              {i.phone ? <span className="ml-2 shrink-0 text-xs text-[#9ca3af]">{i.phone}</span> : null}
             </button>
           ))}
           {filtered.length === 0 && !creating && (
-            <div className="px-3 py-2 text-sm text-neutral-500">Ничего не найдено</div>
+            <div className="px-3 py-2 text-sm text-[#9ca3af]">Ничего не найдено</div>
           )}
           {!creating ? (
             <button
@@ -109,29 +109,29 @@ export function DirectorySelect({
                 setCreating(true);
                 setNewName(query.trim());
               }}
-              className="w-full border-t border-neutral-800 px-3 py-2 text-left text-sm text-emerald-400 hover:bg-neutral-800"
+              className="w-full border-t border-[#e5e7eb] px-3 py-2 text-left text-sm font-semibold text-[#f2994a] hover:bg-[#fdf1e7]"
             >
               + Создать нового…
             </button>
           ) : (
-            <div className="space-y-2 border-t border-neutral-800 p-2">
+            <div className="space-y-2 border-t border-[#e5e7eb] p-2">
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Имя"
-                className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm"
+                className="w-full rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1.5 text-sm"
               />
               <input
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
                 placeholder="Телефон (необязательно)"
-                className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm"
+                className="w-full rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1.5 text-sm"
               />
               <button
                 type="button"
                 onClick={doCreate}
                 disabled={busy}
-                className="w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                className="w-full rounded bg-[#f2994a] py-1.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {busy ? "…" : "Создать и выбрать"}
               </button>

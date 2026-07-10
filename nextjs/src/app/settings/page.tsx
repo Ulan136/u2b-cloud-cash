@@ -17,14 +17,14 @@ const TABS = [
   { k: "suppliers", label: "Фирмы (поставщики)", endpoint: "/api/settings/suppliers", nameLabel: "Поставщик" },
 ];
 
-const input = "w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
+const input = "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 
 export default function SettingsPage() {
   const [tab, setTab] = useState(TABS[0].k);
   const active = TABS.find((t) => t.k === tab)!;
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">⚙️ Настройки</h1>
@@ -39,8 +39,8 @@ export default function SettingsPage() {
               className={
                 "rounded-lg border px-4 py-2 text-sm font-semibold " +
                 (tab === t.k
-                  ? "border-emerald-600 bg-emerald-600/20 text-emerald-300"
-                  : "border-neutral-800 bg-neutral-900 text-neutral-400")
+                  ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                  : "border-[#e5e7eb] bg-white text-[#6b7280]")
               }
             >
               {t.label}
@@ -153,7 +153,7 @@ function DirectoryTab({ endpoint, nameLabel }: { endpoint: string; nameLabel: st
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           value={search}
@@ -161,7 +161,7 @@ function DirectoryTab({ endpoint, nameLabel }: { endpoint: string; nameLabel: st
           placeholder="Поиск…"
           className={input + " max-w-xs flex-1"}
         />
-        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+        <label className="flex items-center gap-1.5 text-xs text-[#6b7280]">
           <input
             type="checkbox"
             checked={showArchived}
@@ -172,28 +172,28 @@ function DirectoryTab({ endpoint, nameLabel }: { endpoint: string; nameLabel: st
         <button
           type="button"
           onClick={() => setAdding((v) => !v)}
-          className="ml-auto rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white"
+          className="ml-auto rounded-lg bg-[#f2994a] px-3 py-2 text-sm font-semibold text-white"
         >
           + Добавить
         </button>
       </div>
 
       {adding && (
-        <div className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-neutral-700 bg-neutral-900 p-3">
+        <div className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-[#e5e7eb] bg-white p-3">
           <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={`Имя (${nameLabel})`} className={input + " min-w-[160px] flex-1"} />
           <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="Телефон" className={input + " w-40"} />
           <input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Комментарий" className={input + " min-w-[140px] flex-1"} />
-          <button type="button" onClick={addNew} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">
+          <button type="button" onClick={addNew} className="rounded-lg bg-[#f2994a] px-4 py-2 text-sm font-semibold text-white">
             Сохранить
           </button>
         </div>
       )}
 
-      {status && <p className="mb-2 text-xs text-neutral-400">{status}</p>}
+      {status && <p className="mb-2 text-xs text-[#6b7280]">{status}</p>}
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-800">
+      <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-900 text-neutral-400">
+          <thead className="bg-white text-[#6b7280]">
             <tr>
               <th className="px-3 py-2 text-left font-medium">Имя</th>
               <th className="px-3 py-2 text-left font-medium">Телефон</th>
@@ -206,42 +206,42 @@ function DirectoryTab({ endpoint, nameLabel }: { endpoint: string; nameLabel: st
             {filtered.map((row) => (
               <tr
                 key={row.id}
-                className={"border-t border-neutral-800 " + (row.archived ? "opacity-50" : "")}
+                className={"border-t border-[#e5e7eb] " + (row.archived ? "opacity-50" : "")}
               >
                 {editId === row.id ? (
                   <>
                     <td className="px-2 py-1.5">
-                      <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-sm" />
+                      <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-sm" />
                     </td>
                     <td className="px-2 py-1.5">
-                      <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-sm" />
+                      <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="w-full rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-sm" />
                     </td>
                     <td className="px-2 py-1.5">
-                      <input value={editComment} onChange={(e) => setEditComment(e.target.value)} className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-sm" />
+                      <input value={editComment} onChange={(e) => setEditComment(e.target.value)} className="w-full rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-sm" />
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-neutral-500">{row.opsCount}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums text-[#9ca3af]">{row.opsCount}</td>
                     <td className="px-3 py-1.5 text-right">
-                      <button type="button" onClick={saveEdit} className="mr-2 text-emerald-400">✓</button>
-                      <button type="button" onClick={() => setEditId(null)} className="text-neutral-500">✕</button>
+                      <button type="button" onClick={saveEdit} className="mr-2 text-[#27ae60]">✓</button>
+                      <button type="button" onClick={() => setEditId(null)} className="text-[#9ca3af]">✕</button>
                     </td>
                   </>
                 ) : (
                   <>
                     <td className="px-3 py-2 text-left">
                       {row.name}
-                      {row.archived && <span className="ml-1 text-[10px] text-neutral-500">(архив)</span>}
+                      {row.archived && <span className="ml-1 text-[10px] text-[#9ca3af]">(архив)</span>}
                     </td>
-                    <td className="px-3 py-2 text-left text-neutral-400">{row.phone}</td>
-                    <td className="px-3 py-2 text-left text-neutral-400">{row.comment}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-neutral-500">{row.opsCount}</td>
+                    <td className="px-3 py-2 text-left text-[#6b7280]">{row.phone}</td>
+                    <td className="px-3 py-2 text-left text-[#6b7280]">{row.comment}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[#9ca3af]">{row.opsCount}</td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
-                      <button type="button" onClick={() => startEdit(row)} className="mr-3 text-neutral-400 hover:text-neutral-100">
+                      <button type="button" onClick={() => startEdit(row)} className="mr-3 text-[#6b7280] hover:text-[#1f2933]">
                         ✎
                       </button>
                       <button
                         type="button"
                         onClick={() => toggleArchive(row)}
-                        className="text-neutral-400 hover:text-neutral-100"
+                        className="text-[#6b7280] hover:text-[#1f2933]"
                         title={row.archived ? "Восстановить" : "Архивировать"}
                       >
                         {row.archived ? "♻" : "🗄"}
@@ -253,7 +253,7 @@ function DirectoryTab({ endpoint, nameLabel }: { endpoint: string; nameLabel: st
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-4 text-center text-neutral-500">
+                <td colSpan={5} className="px-3 py-4 text-center text-[#9ca3af]">
                   Пусто
                 </td>
               </tr>

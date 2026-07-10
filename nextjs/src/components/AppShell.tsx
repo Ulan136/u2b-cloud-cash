@@ -53,17 +53,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Десктоп: сайдбар слева ── */}
       <aside
         className={
-          "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-neutral-800 bg-neutral-950 transition-[width] duration-150 lg:flex " +
+          "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-[#e5e7eb] bg-white transition-[width] duration-150 lg:flex " +
           (collapsed ? "w-14" : "w-[200px]")
         }
       >
         {/* Логотип */}
-        <div className="flex h-14 items-center gap-2 border-b border-neutral-800 px-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 font-bold text-white">
+        <div className="flex h-14 items-center gap-2 border-b border-[#e5e7eb] px-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2f80ed] font-bold text-white">
             ₸
           </div>
           {!collapsed && (
-            <span className="truncate text-sm font-extrabold">U2B Cloud Cash</span>
+            <span className="truncate text-sm font-extrabold text-[#1f2933]">U2B Cloud Cash</span>
           )}
         </div>
 
@@ -81,8 +81,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 " +
                   (collapsed ? "justify-center " : "") +
                   (active
-                    ? "bg-emerald-600/15 text-emerald-400"
-                    : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100")
+                    ? "bg-[#eaf1fd] font-semibold text-[#2f80ed]"
+                    : "text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#1f2933]")
                 }
               >
                 <span className="w-6 shrink-0 text-center text-xl">{it.icon}</span>
@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onClick={toggle}
           title={collapsed ? "Развернуть" : "Свернуть"}
           className={
-            "flex items-center gap-3 border-t border-neutral-800 px-3 py-2.5 text-neutral-500 hover:text-neutral-200 " +
+            "flex items-center gap-3 border-t border-[#e5e7eb] px-3 py-2.5 text-[#9ca3af] hover:text-[#1f2933] " +
             (collapsed ? "justify-center" : "")
           }
         >
@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── Телефон: нижняя панель ── */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-neutral-950/95 backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e5e7eb] bg-white/95 backdrop-blur lg:hidden">
         <div className="flex">
           {ITEMS.map((it) => {
             const active = isActive(it.href);
@@ -120,8 +120,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={
                   "flex flex-1 flex-col items-center justify-center gap-0.5 border-t-2 py-2 text-[11px] " +
                   (active
-                    ? "border-emerald-400 text-emerald-400"
-                    : "border-transparent text-neutral-400")
+                    ? "border-[#2f80ed] text-[#2f80ed]"
+                    : "border-transparent text-[#6b7280]")
                 }
               >
                 <span className="text-lg">{it.icon}</span>

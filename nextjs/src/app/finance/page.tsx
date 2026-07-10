@@ -97,7 +97,7 @@ function evalAmount(s: string): number | null {
 }
 
 const input =
-  "w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3 py-3 text-base";
+  "w-full rounded-xl bg-white border border-[#e5e7eb] px-3 py-3 text-base";
 
 export default function FinancePage() {
   const { hidden, toggle } = useHideAmounts("hideFinance");
@@ -197,9 +197,9 @@ export default function FinancePage() {
 
   return (
     <HideCtx.Provider value={hidden}>
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 pb-10">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] pb-10">
       {/* Шапка */}
-      <div className="sticky top-0 z-20 bg-gradient-to-br from-blue-700 to-sky-600 px-4 pt-4">
+      <div className="sticky top-0 z-20 bg-[#2f80ed] px-4 pt-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div>
@@ -317,7 +317,7 @@ export default function FinancePage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-neutral-800 px-4 py-2 text-sm text-white shadow-lg">
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#f3f4f6] px-4 py-2 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}
@@ -348,7 +348,7 @@ function AmountInput({
         className={input + " text-xl font-bold tabular-nums"}
       />
       {evaled !== null && (
-        <div className="mt-1 rounded-lg bg-emerald-950/50 px-3 py-1 text-sm font-semibold text-emerald-400">
+        <div className="mt-1 rounded-lg bg-[#eafaf0] px-3 py-1 text-sm font-semibold text-[#27ae60]">
           = {fmt(evaled)}
         </div>
       )}
@@ -357,7 +357,7 @@ function AmountInput({
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <div className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+  <div className="mb-1 mt-3 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
     {children}
   </div>
 );
@@ -421,8 +421,8 @@ function OpTab({
 
   return (
     <>
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-3 flex gap-1 rounded-xl bg-neutral-800 p-1">
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-3 flex gap-1 rounded-xl bg-[#f3f4f6] p-1">
           {(["Приход", "Расход"] as const).map((t) => (
             <button
               key={t}
@@ -432,9 +432,9 @@ function OpTab({
                 "flex-1 rounded-lg py-2 text-sm font-bold " +
                 (type === t
                   ? t === "Приход"
-                    ? "bg-neutral-950 text-emerald-400"
-                    : "bg-neutral-950 text-red-400"
-                  : "text-neutral-400")
+                    ? "bg-[#f0f2f5] text-[#27ae60]"
+                    : "bg-[#f0f2f5] text-[#eb5757]"
+                  : "text-[#6b7280]")
               }
             >
               {t === "Приход" ? "＋ Приход" : "－ Расход"}
@@ -484,21 +484,21 @@ function OpTab({
           disabled={saving}
           className={
             "mt-4 w-full rounded-xl py-3.5 text-base font-extrabold text-white disabled:opacity-50 " +
-            (type === "Приход" ? "bg-emerald-600 active:bg-emerald-700" : "bg-red-600 active:bg-red-700")
+            (type === "Приход" ? "bg-[#2f80ed] active:bg-[#2568c9]" : "bg-[#eb5757] active:bg-[#d64545]")
           }
         >
           {saving ? "Сохранение…" : "💾 Сохранить операцию"}
         </button>
       </div>
 
-      <div className="mb-2 mt-4 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+      <div className="mb-2 mt-4 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
         Последние операции
       </div>
       <div className="space-y-2">
         {ops.slice(0, 6).map((o) => (
           <OpRow key={o.id} op={o} />
         ))}
-        {ops.length === 0 && <p className="text-sm text-neutral-500">Нет операций</p>}
+        {ops.length === 0 && <p className="text-sm text-[#9ca3af]">Нет операций</p>}
       </div>
     </>
   );
@@ -506,15 +506,15 @@ function OpTab({
 
 function OpRow({ op, onDelete }: { op: Op; onDelete?: (id: number) => void }) {
   const isTrf = op.type === "Перевод";
-  const color = isTrf ? "text-sky-400" : op.type === "Приход" ? "text-emerald-400" : "text-red-400";
+  const color = isTrf ? "text-sky-400" : op.type === "Приход" ? "text-[#27ae60]" : "text-[#eb5757]";
   const sign = isTrf ? "" : op.type === "Приход" ? "+" : "−";
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-3">
+    <div className="flex items-center gap-3 rounded-xl border border-[#e5e7eb] bg-white p-3">
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold">
           {isTrf ? `${op.accountName} → ${op.toAccountName}` : op.name || "—"}
         </div>
-        <div className="text-[11px] text-neutral-500">
+        <div className="text-[11px] text-[#9ca3af]">
           {op.date} · {isTrf ? "Перевод" : op.accountName}
           {op.comment ? ` · ${op.comment}` : ""}
         </div>
@@ -527,7 +527,7 @@ function OpRow({ op, onDelete }: { op: Op; onDelete?: (id: number) => void }) {
         <button
           type="button"
           onClick={() => onDelete(op.id)}
-          className="shrink-0 rounded-lg bg-neutral-800 border border-neutral-700 px-2 py-1 text-red-400"
+          className="shrink-0 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-[#eb5757]"
           aria-label="Удалить"
         >
           ✕
@@ -597,7 +597,7 @@ function TrfTab({
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
       <Label>Дата</Label>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={input} />
       <Label>Со счёта</Label>
@@ -608,7 +608,7 @@ function TrfTab({
           </option>
         ))}
       </select>
-      <div className="py-2 text-center text-xl text-neutral-500">⇅</div>
+      <div className="py-2 text-center text-xl text-[#9ca3af]">⇅</div>
       <Label>На счёт</Label>
       <select value={to} onChange={(e) => setTo(Number(e.target.value))} className={input}>
         {accounts.map((a) => (
@@ -625,7 +625,7 @@ function TrfTab({
         type="button"
         onClick={save}
         disabled={saving}
-        className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-base font-extrabold text-white disabled:opacity-50 active:bg-blue-700"
+        className="mt-4 w-full rounded-xl bg-[#2f80ed] py-3.5 text-base font-extrabold text-white disabled:opacity-50 active:bg-[#2568c9]"
       >
         {saving ? "…" : "🔄 Выполнить перевод"}
       </button>
@@ -718,18 +718,18 @@ function FavTab({
 
   return (
     <>
-      <div className="mb-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+      <div className="mb-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
           Избранные операции
         </div>
         <div className="space-y-2">
           {favs.map((f) => (
-            <div key={f.id} className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950 p-3">
+            <div key={f.id} className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-3">
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{f.name}</div>
-                <div className="text-[11px] text-neutral-500">
+                <div className="text-[11px] text-[#9ca3af]">
                   {f.accountName} ·{" "}
-                  <span className={f.type === "Приход" ? "text-emerald-400" : "text-red-400"}>
+                  <span className={f.type === "Приход" ? "text-[#27ae60]" : "text-[#eb5757]"}>
                     {f.type}
                   </span>{" "}
                   · <Amt>{fmtNum(f.amount)}</Amt> ₸
@@ -738,37 +738,37 @@ function FavTab({
               <button
                 type="button"
                 onClick={() => runFav(f)}
-                className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white"
+                className="shrink-0 rounded-lg bg-[#2f80ed] px-3 py-1.5 text-sm font-bold text-white"
               >
                 ▶
               </button>
               <button
                 type="button"
                 onClick={() => delFav(f.id)}
-                className="shrink-0 rounded-lg bg-neutral-800 border border-neutral-700 px-2 py-1 text-red-400"
+                className="shrink-0 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-[#eb5757]"
               >
                 ✕
               </button>
             </div>
           ))}
-          {favs.length === 0 && <p className="text-sm text-neutral-500">Нет избранных</p>}
+          {favs.length === 0 && <p className="text-sm text-[#9ca3af]">Нет избранных</p>}
         </div>
         {favs.length > 0 && (
           <button
             type="button"
             onClick={runAll}
-            className="mt-3 w-full rounded-xl bg-emerald-600 py-3 text-sm font-extrabold text-white active:bg-emerald-700"
+            className="mt-3 w-full rounded-xl bg-[#2f80ed] py-3 text-sm font-extrabold text-white active:bg-[#2568c9]"
           >
             ▶ Провести все на сегодня
           </button>
         )}
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
           Добавить в избранное
         </div>
-        <div className="mb-3 flex gap-1 rounded-xl bg-neutral-800 p-1">
+        <div className="mb-3 flex gap-1 rounded-xl bg-[#f3f4f6] p-1">
           {(["Приход", "Расход"] as const).map((t) => (
             <button
               key={t}
@@ -778,9 +778,9 @@ function FavTab({
                 "flex-1 rounded-lg py-2 text-sm font-bold " +
                 (type === t
                   ? t === "Приход"
-                    ? "bg-neutral-950 text-emerald-400"
-                    : "bg-neutral-950 text-red-400"
-                  : "text-neutral-400")
+                    ? "bg-[#f0f2f5] text-[#27ae60]"
+                    : "bg-[#f0f2f5] text-[#eb5757]"
+                  : "text-[#6b7280]")
               }
             >
               {t}
@@ -802,7 +802,7 @@ function FavTab({
         <button
           type="button"
           onClick={addFav}
-          className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-base font-extrabold text-white active:bg-blue-700"
+          className="mt-4 w-full rounded-xl bg-[#f2994a] py-3.5 text-base font-extrabold text-white active:bg-[#e07f30]"
         >
           ⭐ Добавить в избранное
         </button>
@@ -861,17 +861,17 @@ function HistTab({
         <button
           type="button"
           onClick={apply}
-          className="shrink-0 rounded-xl bg-blue-600 px-4 font-bold text-white"
+          className="shrink-0 rounded-xl bg-[#2f80ed] px-4 font-bold text-white"
         >
           →
         </button>
       </div>
-      <div className="mb-2 text-[11px] text-neutral-500">{ops.length} записей</div>
+      <div className="mb-2 text-[11px] text-[#9ca3af]">{ops.length} записей</div>
       <div className="space-y-2">
         {ops.map((o) => (
           <OpRow key={o.id} op={o} onDelete={del} />
         ))}
-        {ops.length === 0 && <p className="py-4 text-center text-sm text-neutral-500">Нет операций</p>}
+        {ops.length === 0 && <p className="py-4 text-center text-sm text-[#9ca3af]">Нет операций</p>}
       </div>
     </div>
   );
@@ -939,19 +939,19 @@ function AccTab({
 
   return (
     <>
-      <div className="mb-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+      <div className="mb-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
           Мои счета
         </div>
         <div className="space-y-3">
           {accounts.map((a) => (
-            <div key={a.id} className={"rounded-xl border p-3 " + (a.archived ? "border-neutral-800 bg-neutral-950 opacity-60" : "border-neutral-800 bg-neutral-950")}>
+            <div key={a.id} className={"rounded-xl border p-3 " + (a.archived ? "border-[#e5e7eb] bg-[#f0f2f5] opacity-60" : "border-[#e5e7eb] bg-[#f0f2f5]")}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{a.icon}</span>
                   <div>
                     <div className="text-sm font-bold">{a.name}</div>
-                    <div className="text-[11px] text-neutral-500">
+                    <div className="text-[11px] text-[#9ca3af]">
                       нач. <Amt>{fmtNum(a.initialBalance)}</Amt> ₸
                     </div>
                   </div>
@@ -961,7 +961,7 @@ function AccTab({
                   <button
                     type="button"
                     onClick={() => toggleArchive(a)}
-                    className="text-[11px] text-neutral-500 underline"
+                    className="text-[11px] text-[#9ca3af] underline"
                   >
                     {a.archived ? "восстановить" : "в архив"}
                   </button>
@@ -970,7 +970,7 @@ function AccTab({
               <select
                 value={a.categoryId ?? ""}
                 onChange={(e) => changeCategory(a.id, Number(e.target.value))}
-                className="mt-2 w-full rounded-lg bg-neutral-800 border border-neutral-700 px-2 py-2 text-sm"
+                className="mt-2 w-full rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-2 text-sm"
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -983,8 +983,8 @@ function AccTab({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-neutral-400">
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6b7280]">
           Добавить счёт
         </div>
         <Label>Название</Label>
@@ -1004,7 +1004,7 @@ function AccTab({
         <button
           type="button"
           onClick={addAccount}
-          className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-base font-extrabold text-white active:bg-blue-700"
+          className="mt-4 w-full rounded-xl bg-[#f2994a] py-3.5 text-base font-extrabold text-white active:bg-[#e07f30]"
         >
           ＋ Добавить счёт
         </button>
@@ -1070,10 +1070,10 @@ function RepTab({ accounts }: { accounts: Account[] }) {
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={input} />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={input} />
       </div>
-      {loading && <p className="py-2 text-center text-sm text-neutral-500">Загрузка…</p>}
-      <div className="overflow-x-auto rounded-xl border border-neutral-800">
+      {loading && <p className="py-2 text-center text-sm text-[#9ca3af]">Загрузка…</p>}
+      <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
         <table className="w-full text-sm tabular-nums">
-          <thead className="bg-neutral-900 text-neutral-400">
+          <thead className="bg-white text-[#6b7280]">
             <tr>
               <th className="px-3 py-2 text-left font-medium">Счёт</th>
               <th className="px-2 py-2 text-right font-medium">Приход</th>
@@ -1083,19 +1083,19 @@ function RepTab({ accounts }: { accounts: Account[] }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.account.id} className="border-t border-neutral-800">
+              <tr key={r.account.id} className="border-t border-[#e5e7eb]">
                 <td className="px-3 py-2 text-left">
                   {r.account.icon} {r.account.name}
                 </td>
-                <td className="px-2 py-2 text-right text-emerald-400">+<Amt>{fmtNum(r.income)}</Amt></td>
-                <td className="px-2 py-2 text-right text-red-400">−<Amt>{fmtNum(r.expense)}</Amt></td>
+                <td className="px-2 py-2 text-right text-[#27ae60]">+<Amt>{fmtNum(r.income)}</Amt></td>
+                <td className="px-2 py-2 text-right text-[#eb5757]">−<Amt>{fmtNum(r.expense)}</Amt></td>
                 <td className="px-3 py-2 text-right font-semibold"><Amt>{fmtNum(r.account.balance)}</Amt></td>
               </tr>
             ))}
-            <tr className="border-t border-neutral-700 bg-neutral-900 font-bold">
+            <tr className="border-t border-[#e5e7eb] bg-white font-bold">
               <td className="px-3 py-2 text-left">Итого</td>
-              <td className="px-2 py-2 text-right text-emerald-400">+<Amt>{fmtNum(totals.income)}</Amt></td>
-              <td className="px-2 py-2 text-right text-red-400">−<Amt>{fmtNum(totals.expense)}</Amt></td>
+              <td className="px-2 py-2 text-right text-[#27ae60]">+<Amt>{fmtNum(totals.income)}</Amt></td>
+              <td className="px-2 py-2 text-right text-[#eb5757]">−<Amt>{fmtNum(totals.expense)}</Amt></td>
               <td className="px-3 py-2 text-right"><Amt>{fmtNum(totalBalance)}</Amt></td>
             </tr>
           </tbody>
@@ -1104,7 +1104,7 @@ function RepTab({ accounts }: { accounts: Account[] }) {
       <button
         type="button"
         onClick={() => window.print()}
-        className="mt-3 w-full rounded-xl bg-blue-600 py-3 text-sm font-extrabold text-white active:bg-blue-700"
+        className="mt-3 w-full rounded-xl bg-[#2f80ed] py-3 text-sm font-extrabold text-white active:bg-[#2568c9]"
       >
         📄 Печать / PDF
       </button>

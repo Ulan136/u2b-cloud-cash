@@ -41,8 +41,8 @@ function monthRange() {
 }
 
 const input =
-  "w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm";
-const panel = "rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4";
+  "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
+const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
 export default function KonsPage() {
   const today = useMemo(() => todayStr(), []);
@@ -190,7 +190,7 @@ export default function KonsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-6xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">КОНС</h1>
@@ -206,11 +206,11 @@ export default function KonsPage() {
             <div className={panel}>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block w-32">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Дата</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Дата</span>
                   <input type="date" value={recordDate} onChange={(e) => setRecordDate(e.target.value)} className={input} />
                 </label>
                 <label className="block min-w-[160px] flex-1">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Поставщик</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Поставщик</span>
                   <DirectorySelect
                     items={dirSuppliers}
                     value={formSupplier}
@@ -220,37 +220,37 @@ export default function KonsPage() {
                   />
                 </label>
                 <label className="block w-24">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Приход</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Приход</span>
                   <input inputMode="decimal" value={prihod} onChange={(e) => setPrihod(e.target.value)} placeholder="0" className={input + " text-right tabular-nums"} />
                 </label>
                 <label className="block w-24">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Оплата</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Оплата</span>
                   <input inputMode="decimal" value={rashod} onChange={(e) => setRashod(e.target.value)} placeholder="0" className={input + " text-right tabular-nums"} />
                 </label>
                 <label className="block min-w-[110px] flex-1">
-                  <span className="mb-1 block text-[11px] text-neutral-400">Комментарий</span>
+                  <span className="mb-1 block text-[11px] text-[#6b7280]">Комментарий</span>
                   <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="необязательно" className={input} />
                 </label>
                 <button
                   type="button"
                   onClick={save}
                   disabled={saving}
-                  className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:bg-emerald-700"
+                  className="rounded-lg bg-[#2f80ed] px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:bg-[#2568c9]"
                 >
                   {saving ? "…" : "ВНЕСТИ"}
                 </button>
               </div>
-              {status && <p className="mt-2 text-xs text-neutral-300">{status}</p>}
+              {status && <p className="mt-2 text-xs text-[#374151]">{status}</p>}
             </div>
 
             {/* Журнал за период / история выбранного */}
             <div className={panel}>
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                   {selected ? `История: ${selected}` : "Журнал за период"}
                 </span>
                 {selected && (
-                  <button type="button" onClick={clearSelection} className="text-[11px] text-emerald-400 underline">
+                  <button type="button" onClick={clearSelection} className="text-[11px] text-[#27ae60] underline">
                     ← весь журнал
                   </button>
                 )}
@@ -269,21 +269,21 @@ export default function KonsPage() {
                       className={
                         "rounded-lg border px-3 py-1.5 text-xs font-semibold " +
                         (preset === b.k
-                          ? "border-emerald-600 bg-emerald-600/20 text-emerald-300"
-                          : "border-neutral-800 bg-neutral-900 text-neutral-400")
+                          ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                          : "border-[#e5e7eb] bg-white text-[#6b7280]")
                       }
                     >
                       {b.label}
                     </button>
                   ))}
-                  <input type="date" value={from} onChange={(e) => { setPreset("custom"); setFrom(e.target.value); }} className="rounded-lg bg-neutral-900 border border-neutral-800 px-2 py-1.5 text-xs" />
-                  <input type="date" value={to} onChange={(e) => { setPreset("custom"); setTo(e.target.value); }} className="rounded-lg bg-neutral-900 border border-neutral-800 px-2 py-1.5 text-xs" />
+                  <input type="date" value={from} onChange={(e) => { setPreset("custom"); setFrom(e.target.value); }} className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs" />
+                  <input type="date" value={to} onChange={(e) => { setPreset("custom"); setTo(e.target.value); }} className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs" />
                 </div>
               )}
 
-              <div className="overflow-x-auto rounded-lg border border-neutral-800">
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
                 <table className="w-full text-xs tabular-nums">
-                  <thead className="bg-neutral-900 text-neutral-400">
+                  <thead className="bg-white text-[#6b7280]">
                     <tr>
                       <th className="px-2 py-1.5 text-left font-medium">Дата</th>
                       {!selected && <th className="px-2 py-1.5 text-left font-medium">Поставщик</th>}
@@ -296,36 +296,36 @@ export default function KonsPage() {
                   <tbody>
                     {selected
                       ? (history ?? []).map((h) => (
-                          <tr key={h.id} className="border-t border-neutral-800">
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{h.date}</td>
-                            <td className="px-2 py-1.5 text-right text-red-400">{num(h.prihod) ? fmt(num(h.prihod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-right text-emerald-400">{num(h.rashod) ? fmt(num(h.rashod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{h.comment}</td>
+                          <tr key={h.id} className="border-t border-[#e5e7eb]">
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
+                            <td className="px-2 py-1.5 text-right text-[#eb5757]">{num(h.prihod) ? fmt(num(h.prihod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-right text-[#27ae60]">{num(h.rashod) ? fmt(num(h.rashod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
                             <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(h.id)} className="text-neutral-600 hover:text-red-400">✕</button>
+                              <button type="button" onClick={() => removeEntry(h.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
                             </td>
                           </tr>
                         ))
                       : entries.map((e) => (
-                          <tr key={e.id} className="border-t border-neutral-800">
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{e.date}</td>
+                          <tr key={e.id} className="border-t border-[#e5e7eb]">
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
                             <td className="px-2 py-1.5 text-left">
-                              <button type="button" onClick={() => selectSupplier(e.supplier)} className="hover:text-emerald-400">
+                              <button type="button" onClick={() => selectSupplier(e.supplier)} className="hover:text-[#27ae60]">
                                 {e.supplier}
                               </button>
                             </td>
-                            <td className="px-2 py-1.5 text-right text-red-400">{num(e.prihod) ? fmt(num(e.prihod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-right text-emerald-400">{num(e.rashod) ? fmt(num(e.rashod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-left text-neutral-400">{e.comment}</td>
+                            <td className="px-2 py-1.5 text-right text-[#eb5757]">{num(e.prihod) ? fmt(num(e.prihod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-right text-[#27ae60]">{num(e.rashod) ? fmt(num(e.rashod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
                             <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(e.id)} className="text-neutral-600 hover:text-red-400">✕</button>
+                              <button type="button" onClick={() => removeEntry(e.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
                             </td>
                           </tr>
                         ))}
                     {((selected && history !== null && history.length === 0) ||
                       (!selected && entries.length === 0)) && (
                       <tr>
-                        <td colSpan={selected ? 5 : 6} className="px-2 py-3 text-center text-neutral-500">
+                        <td colSpan={selected ? 5 : 6} className="px-2 py-3 text-center text-[#9ca3af]">
                           Нет записей
                         </td>
                       </tr>
@@ -338,11 +338,11 @@ export default function KonsPage() {
 
           {/* ПРАВАЯ: постоянный список поставщиков (остаток за всё время) */}
           <section className={panel + " space-y-3"}>
-            <div className="rounded-xl border border-red-900/60 bg-red-950/25 p-3 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+            <div className="rounded-xl border border-[#f5c6c6] bg-[#fdecec] p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                 Общий остаток (сколько мы должны)
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-red-400">
+              <div className="text-2xl font-extrabold tabular-nums text-[#eb5757]">
                 {fmt(totalOstatok)}
               </div>
             </div>
@@ -354,9 +354,9 @@ export default function KonsPage() {
               className={input}
             />
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-800">
+            <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
               <table className="w-full text-sm tabular-nums">
-                <thead className="bg-neutral-900 text-neutral-400">
+                <thead className="bg-white text-[#6b7280]">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Поставщик</th>
                     <th className="px-2 py-2 text-right font-medium">Приход</th>
@@ -370,17 +370,17 @@ export default function KonsPage() {
                       key={b.supplier}
                       onClick={() => selectSupplier(b.supplier)}
                       className={
-                        "cursor-pointer border-t border-neutral-800 active:bg-neutral-900 " +
-                        (selected === b.supplier ? "bg-neutral-800/60" : "")
+                        "cursor-pointer border-t border-[#e5e7eb] active:bg-white " +
+                        (selected === b.supplier ? "bg-[#eaf1fd]" : "")
                       }
                     >
                       <td className="px-3 py-2 text-left">{b.supplier}</td>
-                      <td className="px-2 py-2 text-right text-neutral-400">{fmt(b.prihod)}</td>
-                      <td className="px-2 py-2 text-right text-neutral-400">{fmt(b.rashod)}</td>
+                      <td className="px-2 py-2 text-right text-[#6b7280]">{fmt(b.prihod)}</td>
+                      <td className="px-2 py-2 text-right text-[#6b7280]">{fmt(b.rashod)}</td>
                       <td
                         className={
                           "px-3 py-2 text-right font-semibold " +
-                          (b.ostatok > 0 ? "text-red-400" : b.ostatok < 0 ? "text-emerald-400" : "text-neutral-300")
+                          (b.ostatok > 0 ? "text-[#eb5757]" : b.ostatok < 0 ? "text-[#27ae60]" : "text-[#374151]")
                         }
                       >
                         {fmt(b.ostatok)}
@@ -389,7 +389,7 @@ export default function KonsPage() {
                   ))}
                   {roster.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-neutral-500">
+                      <td colSpan={4} className="px-3 py-4 text-center text-[#9ca3af]">
                         Пока нет поставщиков
                       </td>
                     </tr>

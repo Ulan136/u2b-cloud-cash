@@ -49,7 +49,7 @@ const MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "И�
 
 const fmt = (n: number) => n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
 const diffColor = (n: number) =>
-  n < 0 ? "text-red-400" : n > 0 ? "text-orange-400" : "text-cyan-400";
+  n < 0 ? "text-[#eb5757]" : n > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
 
 export default function ReportsPage() {
   const now = useMemo(() => new Date(), []);
@@ -106,15 +106,15 @@ export default function ReportsPage() {
   const monthAcc = monthData?.gap.accumulated ?? 0;
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-5">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
       <div className="mx-auto w-full max-w-7xl">
         <header className="mb-4 flex items-center gap-3">
           <h1 className="text-2xl font-bold">Отчёты</h1>
-          <div className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-1">
+          <div className="flex items-center gap-1 rounded-lg border border-[#e5e7eb] bg-white px-1">
             <button
               type="button"
               onClick={() => setYear((y) => y - 1)}
-              className="px-2 py-1 text-neutral-400 hover:text-neutral-100"
+              className="px-2 py-1 text-[#6b7280] hover:text-[#1f2933]"
             >
               ◀
             </button>
@@ -122,7 +122,7 @@ export default function ReportsPage() {
             <button
               type="button"
               onClick={() => setYear((y) => y + 1)}
-              className="px-2 py-1 text-neutral-400 hover:text-neutral-100"
+              className="px-2 py-1 text-[#6b7280] hover:text-[#1f2933]"
             >
               ▶
             </button>
@@ -135,11 +135,11 @@ export default function ReportsPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           {/* ГОДОВАЯ ТАБЛИЦА */}
           <section className="lg:col-span-2">
-            <div className="overflow-x-auto rounded-2xl border border-neutral-800">
+            <div className="overflow-x-auto rounded-2xl border border-[#e5e7eb]">
               <table className="w-full border-collapse text-xs tabular-nums">
                 <thead>
-                  <tr className="bg-neutral-900 text-neutral-400">
-                    <th className="sticky left-0 z-10 bg-neutral-900 px-3 py-2 text-left font-medium">
+                  <tr className="bg-white text-[#6b7280]">
+                    <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium">
                       Показатель
                     </th>
                     {MONTHS.map((m, i) => (
@@ -147,20 +147,20 @@ export default function ReportsPage() {
                         key={m}
                         onClick={() => setSelectedMonth(i + 1)}
                         className={
-                          "cursor-pointer px-2 py-2 text-right font-medium select-none hover:text-neutral-200 " +
-                          (selectedMonth === i + 1 ? "bg-emerald-600/20 text-emerald-300" : "")
+                          "cursor-pointer px-2 py-2 text-right font-medium select-none hover:text-[#1f2933] " +
+                          (selectedMonth === i + 1 ? "bg-[#eaf1fd] text-[#2f80ed]" : "")
                         }
                       >
                         {m}
                       </th>
                     ))}
-                    <th className="px-3 py-2 text-right font-semibold text-neutral-200">Год</th>
+                    <th className="px-3 py-2 text-right font-semibold text-[#1f2933]">Год</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ROWS.map((row) => (
-                    <tr key={row.key} className="border-t border-neutral-800">
-                      <td className="sticky left-0 z-10 bg-neutral-950 px-3 py-1.5 text-left text-neutral-300">
+                    <tr key={row.key} className="border-t border-[#e5e7eb]">
+                      <td className="sticky left-0 z-10 bg-[#f0f2f5] px-3 py-1.5 text-left text-[#374151]">
                         {row.label}
                       </td>
                       {(yearData?.months ?? []).map((mo) => {
@@ -180,7 +180,7 @@ export default function ReportsPage() {
                                     saveSebestoimost(mo.month, nv);
                                 }}
                                 placeholder="0"
-                                className="w-16 rounded bg-emerald-950/30 border border-emerald-900/60 px-1.5 py-1 text-right text-xs tabular-nums outline-none focus:border-emerald-600"
+                                className="w-16 rounded bg-[#eef4ff] border border-[#cfe0fb] px-1.5 py-1 text-right text-xs tabular-nums outline-none focus:border-[#2f80ed]"
                               />
                             </td>
                           );
@@ -193,7 +193,7 @@ export default function ReportsPage() {
                               (row.kind === "diff"
                                 ? diffColor(v) + " font-semibold"
                                 : v === 0
-                                  ? "text-neutral-600"
+                                  ? "text-[#b0b6bf]"
                                   : "")
                             }
                           >
@@ -219,19 +219,19 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-[11px] text-neutral-500">
+            <p className="mt-2 text-[11px] text-[#9ca3af]">
               Клик по месяцу — анализ справа. Себестоимость — редактируемая ячейка (сохраняется помесячно).
             </p>
           </section>
 
           {/* ПРАВАЯ ПАНЕЛЬ — анализ месяца */}
-          <section className="space-y-3 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <section className="space-y-3 rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
               Анализ — {MONTHS[selectedMonth - 1]} {year}
             </div>
 
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+            <div className="rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-4 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                 МИН/ПЛЮС месяца
               </div>
               <div className={"mt-1 text-3xl font-extrabold tabular-nums " + diffColor(monthAcc)}>
@@ -242,9 +242,9 @@ export default function ReportsPage() {
 
             <GapChart perDay={monthData?.gap.perDay ?? []} />
 
-            <div className="overflow-x-auto rounded-xl border border-neutral-800">
+            <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
               <table className="w-full text-xs tabular-nums">
-                <thead className="bg-neutral-900 text-neutral-400">
+                <thead className="bg-white text-[#6b7280]">
                   <tr>
                     <th className="px-2 py-1.5 text-left font-medium">Дата</th>
                     <th className="px-2 py-1.5 text-right font-medium">Claud</th>
@@ -254,8 +254,8 @@ export default function ReportsPage() {
                 </thead>
                 <tbody>
                   {(monthData?.gap.perDay ?? []).map((d) => (
-                    <tr key={d.date} className="border-t border-neutral-800">
-                      <td className="px-2 py-1.5 text-left text-neutral-400">
+                    <tr key={d.date} className="border-t border-[#e5e7eb]">
+                      <td className="px-2 py-1.5 text-left text-[#6b7280]">
                         {d.date.slice(8)}
                         {d.closed && (
                           <span
@@ -276,7 +276,7 @@ export default function ReportsPage() {
                   ))}
                   {monthData && monthData.gap.perDay.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-2 py-3 text-center text-neutral-500">
+                      <td colSpan={4} className="px-2 py-3 text-center text-[#9ca3af]">
                         Нет данных за месяц
                       </td>
                     </tr>
@@ -285,17 +285,17 @@ export default function ReportsPage() {
               </table>
             </div>
 
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3">
-              <div className="mb-1 text-[11px] uppercase text-neutral-400">Расходы по категориям</div>
+            <div className="rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-3">
+              <div className="mb-1 text-[11px] uppercase text-[#6b7280]">Расходы по категориям</div>
               <div className="space-y-1">
                 {(monthData?.summary.expensesByCategory ?? []).map((c) => (
                   <div key={c.category} className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-400">{c.category}</span>
+                    <span className="text-[#6b7280]">{c.category}</span>
                     <span className="tabular-nums font-medium">{fmt(c.amount)}</span>
                   </div>
                 ))}
                 {monthData && monthData.summary.expensesByCategory.length === 0 && (
-                  <p className="text-sm text-neutral-500">Нет расходов</p>
+                  <p className="text-sm text-[#9ca3af]">Нет расходов</p>
                 )}
               </div>
             </div>
@@ -315,7 +315,7 @@ function GapChart({ perDay }: { perDay: PerDay[] }) {
   const barW = 8;
   return (
     <div>
-      <div className="mb-1 text-[11px] text-neutral-500">
+      <div className="mb-1 text-[11px] text-[#9ca3af]">
         МИН/ПЛЮС по дням (вверх — излишек, вниз — недостача)
       </div>
       <svg
@@ -323,9 +323,9 @@ function GapChart({ perDay }: { perDay: PerDay[] }) {
         width="100%"
         height={H}
         preserveAspectRatio="none"
-        className="rounded-xl border border-neutral-800 bg-neutral-950"
+        className="rounded-xl border border-[#e5e7eb] bg-[#f0f2f5]"
       >
-        <line x1={0} y1={mid} x2={perDay.length * step} y2={mid} stroke="#404040" strokeWidth={0.5} />
+        <line x1={0} y1={mid} x2={perDay.length * step} y2={mid} stroke="#cbd1d9" strokeWidth={0.5} />
         {perDay.map((d, i) => {
           const h = (Math.abs(d.minPlus) / maxAbs) * (mid - 5);
           const x = i * step + (step - barW) / 2;
