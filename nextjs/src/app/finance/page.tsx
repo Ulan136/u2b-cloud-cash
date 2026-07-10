@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 // ── типы ──
 type Category = { id: number; code: string; name: string; icon: string | null; color: string | null };
@@ -131,11 +133,21 @@ export default function FinancePage() {
     setFavs(d.favs ?? []);
   }, []);
 
-  useEffect(() => {
-    loadAccounts();
-    loadOps();
-    loadFavs();
-  }, [loadAccounts, loadOps, loadFavs]);
+  // Формы каждой вкладки живут в локальном состоянии дочерних компонентов, поэтому
+  // фон обновляет только просмотр: балансы счетов (чипы) и избранное. Список операций
+  // истории не трогаем при фоне — им управляют фильтры пользователя.
+  const load = useCallback(
+    async ({ background }: { background: boolean }) => {
+      if (background) {
+        await Promise.all([loadAccounts(), loadFavs()]);
+      } else {
+        await Promise.all([loadAccounts(), loadOps(), loadFavs()]);
+      }
+    },
+    [loadAccounts, loadOps, loadFavs]
+  );
+
+  const { refreshing, lastUpdated } = useLiveData("finance", load, []);
 
   const balanceById = useMemo(() => {
     const m = new Map<number, number>();
@@ -195,6 +207,11 @@ export default function FinancePage() {
             <div className="text-xl font-extrabold text-white tabular-nums">
               {fmt(total)}
             </div>
+            <LiveIndicator
+              lastUpdated={lastUpdated}
+              refreshing={refreshing}
+              className="text-white/60"
+            />
           </div>
         </div>
 

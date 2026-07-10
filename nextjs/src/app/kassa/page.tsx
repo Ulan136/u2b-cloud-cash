@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 const DAY_KEYS = [
   "klaudObshch",
@@ -71,43 +73,51 @@ export default function KassaPage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
-  const load = useCallback(async (d: string) => {
-    setLoading(true);
-    setStatus("");
-    try {
-      const res = await fetch(`/api/kassa?date=${d}`);
-      const data = await res.json();
-      const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
-      setDay(
-        data.day
-          ? {
-              klaudObshch: s(data.day.klaudObshch),
-              nalichnye: s(data.day.nalichnye),
-              kaspi: s(data.day.kaspi),
-              halyk: s(data.day.halyk),
-              inkasNalichka: s(data.day.inkasNalichka),
-              vozvrat: s(data.day.vozvrat),
-              zakupTovar: s(data.day.zakupTovar),
-              comment: s(data.day.comment),
-            }
-          : emptyDay()
-      );
-      setExpenses(
-        (data.expenses ?? []).map((e: Record<string, unknown>) => ({
-          category: String(e.category ?? ""),
-          amount: s(e.amount),
-          comment: s(e.comment),
-        }))
-      );
-      setTotals(data.totals ?? { debt: "0", payment: "0" });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Фоновое обновление (polling/focus) трогает только просмотр — totals (ДОЛГ/Возврат
+  // долг из debts, влияют на авто-МИН/ПЛЮС). day и expenses — форма пользователя,
+  // при фоне их НЕ перезаписываем, чтобы не затереть несохранённый ввод.
+  const load = useCallback(
+    async ({ background }: { background: boolean }) => {
+      if (!background) {
+        setLoading(true);
+        setStatus("");
+      }
+      try {
+        const res = await fetch(`/api/kassa?date=${date}`);
+        const data = await res.json();
+        const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+        setTotals(data.totals ?? { debt: "0", payment: "0" });
+        if (!background) {
+          setDay(
+            data.day
+              ? {
+                  klaudObshch: s(data.day.klaudObshch),
+                  nalichnye: s(data.day.nalichnye),
+                  kaspi: s(data.day.kaspi),
+                  halyk: s(data.day.halyk),
+                  inkasNalichka: s(data.day.inkasNalichka),
+                  vozvrat: s(data.day.vozvrat),
+                  zakupTovar: s(data.day.zakupTovar),
+                  comment: s(data.day.comment),
+                }
+              : emptyDay()
+          );
+          setExpenses(
+            (data.expenses ?? []).map((e: Record<string, unknown>) => ({
+              category: String(e.category ?? ""),
+              amount: s(e.amount),
+              comment: s(e.comment),
+            }))
+          );
+        }
+      } finally {
+        if (!background) setLoading(false);
+      }
+    },
+    [date]
+  );
 
-  useEffect(() => {
-    load(date);
-  }, [date, load]);
+  const { refreshing, lastUpdated } = useLiveData("kassa", load, [date]);
 
   const setField = (key: DayKey | "comment", value: string) =>
     setDay((d) => ({ ...d, [key]: value }));
@@ -158,7 +168,7 @@ export default function KassaPage() {
       });
       if (!res.ok) throw new Error();
       setStatus("Сохранено ✓");
-      await load(date);
+      await load({ background: false });
     } catch {
       setStatus("Ошибка сохранения");
     } finally {
@@ -210,8 +220,13 @@ export default function KassaPage() {
             ←
           </Link>
           <h1 className="text-xl font-bold">Касса</h1>
-          <span className="ml-auto text-xs text-neutral-500">
-            {loading ? "загрузка…" : status}
+          <span className="ml-auto flex items-center gap-2 text-xs text-neutral-500">
+            {status && <span>{status}</span>}
+            {loading ? (
+              <span>загрузка…</span>
+            ) : (
+              <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
+            )}
           </span>
         </header>
 

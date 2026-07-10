@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 type Entry = {
   id: number;
@@ -50,19 +52,19 @@ export default function SalaryPage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
-  const load = useCallback(async (f: string, t: string, d: string) => {
-    const res = await fetch(`/api/salary?from=${f}&to=${t}&date=${d}`);
+  // Данные страницы — просмотровые (журнал, сводка, итоги, подсказки имён);
+  // поля формы хранятся отдельно, поэтому фон можно перезагружать целиком.
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/salary?from=${from}&to=${to}&date=${formDate}`);
     const data = await res.json();
     setEntries(data.entries ?? []);
     setByEmployee(data.byEmployee ?? []);
     setTotalPeriod(data.totalPeriod ?? 0);
     setDayTotal(data.dayTotal ?? 0);
     setEmployees(data.employees ?? []);
-  }, []);
+  }, [from, to, formDate]);
 
-  useEffect(() => {
-    load(from, to, formDate);
-  }, [from, to, formDate, load]);
+  const { refreshing, lastUpdated } = useLiveData("salary", load, [from, to, formDate]);
 
   async function save() {
     if (!employee.trim()) {
@@ -90,7 +92,7 @@ export default function SalaryPage() {
       setAmount("");
       setComment("");
       setStatus("Записано ✓");
-      await load(from, to, formDate);
+      await load();
     } catch {
       setStatus("Ошибка записи");
     } finally {
@@ -101,7 +103,7 @@ export default function SalaryPage() {
   async function removeEntry(id: number) {
     if (!window.confirm("Удалить запись?")) return;
     const res = await fetch(`/api/salary?id=${id}`, { method: "DELETE" });
-    if (res.ok) await load(from, to, formDate);
+    if (res.ok) await load();
   }
 
   return (
@@ -115,6 +117,9 @@ export default function SalaryPage() {
             ← Меню
           </Link>
           <h1 className="text-2xl font-bold">Зарплата</h1>
+          <span className="ml-auto">
+            <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
+          </span>
         </header>
 
         {/* Форма */}

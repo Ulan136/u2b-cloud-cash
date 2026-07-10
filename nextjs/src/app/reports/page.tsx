@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 type PerDay = {
   date: string;
@@ -70,20 +72,23 @@ export default function ReportsPage() {
   // Черновики редактируемой себестоимости по датам
   const [sebEdits, setSebEdits] = useState<Record<string, string>>({});
 
-  const load = useCallback(async (f: string, t: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reports?from=${f}&to=${t}`);
-      setData(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Фон обновляет только data (просмотр). Черновики sebEdits при фоне НЕ сбрасываем —
+  // иначе затрём то, что админ сейчас правит; в ячейке всё равно показывается черновик.
+  const load = useCallback(
+    async ({ background }: { background: boolean }) => {
+      if (!background) setLoading(true);
+      try {
+        const res = await fetch(`/api/reports?from=${from}&to=${to}`);
+        setData(await res.json());
+        if (!background) setSebEdits({});
+      } finally {
+        if (!background) setLoading(false);
+      }
+    },
+    [from, to]
+  );
 
-  useEffect(() => {
-    load(from, to);
-    setSebEdits({});
-  }, [from, to, load]);
+  const { refreshing, lastUpdated } = useLiveData("reports", load, [from, to]);
 
   async function saveSebestoimost(date: string, value: string) {
     await fetch("/api/kassa", {
@@ -96,7 +101,7 @@ export default function ReportsPage() {
       delete next[date];
       return next;
     });
-    await load(from, to);
+    await load({ background: true });
   }
 
   function applyPreset(name: string, range: { from: string; to: string }) {
@@ -134,6 +139,9 @@ export default function ReportsPage() {
             ← Меню
           </Link>
           <h1 className="text-2xl font-bold">Отчёты</h1>
+          <span className="ml-auto">
+            <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
+          </span>
         </header>
 
         {/* Период */}

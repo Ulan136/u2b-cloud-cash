@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 type Client = { id: number; name: string; phone: string | null };
 type Entry = {
@@ -94,12 +96,13 @@ export default function DolgiPage() {
     setTotalOstatok(data.totalOstatok ?? 0);
   }, []);
 
-  useEffect(() => {
-    loadClients();
-  }, [loadClients]);
-  useEffect(() => {
-    loadDay(date);
-  }, [date, loadDay]);
+  // Все данные страницы (журнал, итоги, остатки, список клиентов) — просмотровые,
+  // форма хранится в отдельных состояниях, поэтому фон можно перезагружать целиком.
+  const load = useCallback(async () => {
+    await Promise.all([loadDay(date), loadClients()]);
+  }, [date, loadDay, loadClients]);
+
+  const { refreshing, lastUpdated } = useLiveData("dolgi", load, [date]);
 
   // закрытие выпадашки по клику вне
   useEffect(() => {
@@ -220,6 +223,9 @@ export default function DolgiPage() {
             ← Меню
           </Link>
           <h1 className="text-2xl font-bold">Долги</h1>
+          <span className="ml-auto">
+            <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
+          </span>
         </header>
 
         {/* Форма внесения */}

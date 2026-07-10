@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useLiveData } from "@/lib/live/useLiveData";
+import { LiveIndicator } from "@/components/LiveIndicator";
 
 type Entry = {
   id: number;
@@ -68,18 +70,18 @@ export default function KonsPage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
-  const load = useCallback(async (f: string, t: string) => {
-    const res = await fetch(`/api/kons?from=${f}&to=${t}`);
+  // Данные страницы — просмотровые (журнал, остатки, подсказки поставщиков);
+  // поля формы хранятся отдельно, поэтому фон можно перезагружать целиком.
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/kons?from=${from}&to=${to}`);
     const data = await res.json();
     setEntries(data.entries ?? []);
     setBalances(data.balances ?? []);
     setTotalOstatok(data.totalOstatok ?? 0);
     setSuppliers(data.suppliers ?? []);
-  }, []);
+  }, [from, to]);
 
-  useEffect(() => {
-    load(from, to);
-  }, [from, to, load]);
+  const { refreshing, lastUpdated } = useLiveData("kons", load, [from, to]);
 
   const filteredBalances = useMemo(() => {
     const q = balanceSearch.trim().toLowerCase();
@@ -115,7 +117,7 @@ export default function KonsPage() {
       setRashod("");
       setComment("");
       setStatus("Записано ✓");
-      await load(from, to);
+      await load();
     } catch {
       setStatus("Ошибка записи");
     } finally {
@@ -126,7 +128,7 @@ export default function KonsPage() {
   async function removeEntry(id: number) {
     if (!window.confirm("Удалить запись?")) return;
     const res = await fetch(`/api/kons?id=${id}`, { method: "DELETE" });
-    if (res.ok) await load(from, to);
+    if (res.ok) await load();
   }
 
   async function openHistory(b: Balance) {
@@ -148,6 +150,9 @@ export default function KonsPage() {
             ← Меню
           </Link>
           <h1 className="text-2xl font-bold">КОНС</h1>
+          <span className="ml-auto">
+            <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
+          </span>
         </header>
 
         {/* Форма */}
