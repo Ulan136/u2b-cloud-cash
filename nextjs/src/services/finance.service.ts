@@ -27,6 +27,55 @@ function computeBalances(ops: RawOp[]) {
   return delta;
 }
 
+// ── категории ──
+export async function getCategories() {
+  return { categories: await finRepo.categories() };
+}
+
+export async function createCategory(input: { name: string; icon?: string; color?: string }) {
+  const code =
+    input.name
+      .toLowerCase()
+      .replace(/[^a-zа-я0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 24) || "cat";
+  try {
+    const [item] = await finRepo.createCategory({
+      code,
+      name: input.name,
+      icon: input.icon || null,
+      color: input.color || "#64748b",
+    });
+    return { category: item };
+  } catch {
+    // код мог совпасть — добавим суффикс из id-подобной строки
+    const [item] = await finRepo.createCategory({
+      code: `${code}_${input.name.length}${input.name.charCodeAt(0)}`,
+      name: input.name,
+      icon: input.icon || null,
+      color: input.color || "#64748b",
+    });
+    return { category: item };
+  }
+}
+
+export async function updateCategory(input: {
+  id: number;
+  name?: string;
+  icon?: string;
+  color?: string;
+}) {
+  const set: Record<string, unknown> = {};
+  if (input.name !== undefined) set.name = input.name;
+  if (input.icon !== undefined) set.icon = input.icon || null;
+  if (input.color !== undefined) set.color = input.color;
+  if (Object.keys(set).length === 0) {
+    throw new BadRequestError("нет полей для обновления");
+  }
+  const [category] = await finRepo.updateCategory(input.id, set);
+  return { category };
+}
+
 export async function getAccounts() {
   const [categories, accounts, ops] = await Promise.all([
     finRepo.categories(),

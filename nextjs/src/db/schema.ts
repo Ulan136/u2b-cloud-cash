@@ -32,7 +32,14 @@ export const employees = pgTable("employees", {
   phone: text("phone"),
   comment: text("comment"),
   archived: boolean("archived").default(false),
+  hidden: boolean("hidden").default(false), // скрывать суммы ЗП этого работника
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Настройки приложения (ключ-значение): время автозакрытия смены и т.п.
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value"),
 });
 
 // Справочник поставщиков / фирм (для КОНС)

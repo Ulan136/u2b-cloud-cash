@@ -5,10 +5,19 @@ import { finAccounts, finCategories, finFavs, finOps } from "@/db/schema";
 export type AccountValues = typeof finAccounts.$inferInsert;
 export type OpValues = typeof finOps.$inferInsert;
 export type FavValues = typeof finFavs.$inferInsert;
+export type CategoryValues = typeof finCategories.$inferInsert;
 
 // ── categories / accounts ──
 export function categories() {
   return db.select().from(finCategories).orderBy(asc(finCategories.id));
+}
+
+export function createCategory(values: CategoryValues) {
+  return db.insert(finCategories).values(values).returning();
+}
+
+export function updateCategory(id: number, set: Partial<CategoryValues>) {
+  return db.update(finCategories).set(set).where(eq(finCategories.id, id)).returning();
 }
 
 export function accounts() {

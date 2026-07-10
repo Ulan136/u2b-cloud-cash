@@ -44,8 +44,11 @@ const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rg
 
 export default function SalaryPage() {
   const today = useMemo(() => todayStr(), []);
-  const { hidden, toggle } = useHideAmounts("hideSalary");
-  const money = (n: number) => (hidden ? "••••••" : fmt(n));
+  // Глазок раскрывает суммы работников, помеченных «скрыть ЗП» (серверный флаг).
+  const { hidden: reveal, toggle } = useHideAmounts("salaryReveal");
+  const [hiddenEmps, setHiddenEmps] = useState<Set<string>>(new Set());
+  const money = (name: string, n: number) =>
+    !reveal && hiddenEmps.has(name) ? "••••••" : fmt(n);
 
   const [dirEmployees, setDirEmployees] = useState<DirItem[]>([]);
   const [byEmployee, setByEmployee] = useState<ByEmployee[]>([]);
@@ -85,13 +88,14 @@ export default function SalaryPage() {
   const loadDir = useCallback(async () => {
     const res = await fetch("/api/settings/employees?archived=0");
     const d = await res.json();
-    setDirEmployees(
-      (d.items ?? []).map((i: { id: number; name: string; phone: string | null }) => ({
-        id: i.id,
-        name: i.name,
-        phone: i.phone,
-      }))
-    );
+    const items = (d.items ?? []) as {
+      id: number;
+      name: string;
+      phone: string | null;
+      hidden?: boolean;
+    }[];
+    setDirEmployees(items.map((i) => ({ id: i.id, name: i.name, phone: i.phone })));
+    setHiddenEmps(new Set(items.filter((i) => i.hidden).map((i) => i.name)));
   }, []);
 
   const loadHistory = useCallback(async (employee: string) => {
@@ -198,10 +202,10 @@ export default function SalaryPage() {
           <button
             type="button"
             onClick={toggle}
-            title={hidden ? "Показать суммы" : "Скрыть суммы"}
+            title={reveal ? "Скрыть закрытые ЗП" : "Показать закрытые ЗП"}
             className="rounded-lg border border-[#e5e7eb] bg-white px-2.5 py-1.5 text-sm"
           >
-            {hidden ? "🙈" : "👁"}
+            {reveal ? "👁" : "🙈"}
           </button>
           <span className="ml-auto">
             <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />
@@ -328,7 +332,7 @@ export default function SalaryPage() {
                           <tr key={h.id} className="border-t border-[#e5e7eb]">
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
                             <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
-                              {money(num(h.amount))}
+                              {money(selected ?? "", num(h.amount))}
                             </td>
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
                             <td className="px-1 py-1.5 text-right">
@@ -345,7 +349,7 @@ export default function SalaryPage() {
                               </button>
                             </td>
                             <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
-                              {money(num(e.amount))}
+                              {money(e.employee, num(e.amount))}
                             </td>
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
                             <td className="px-1 py-1.5 text-right">
@@ -375,14 +379,14 @@ export default function SalaryPage() {
                   Зарплата за период
                 </div>
                 <div className="text-2xl font-extrabold tabular-nums text-[#27ae60]">
-                  {money(totalPeriod)}
+                  {fmt(totalPeriod)}
                 </div>
               </div>
               <div className="rounded-xl border border-[#e5e7eb] bg-[#f0f2f5] p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                   ЗП за день (сегодня)
                 </div>
-                <div className="text-2xl font-extrabold tabular-nums">{money(dayTotal)}</div>
+                <div className="text-2xl font-extrabold tabular-nums">{fmt(dayTotal)}</div>
               </div>
             </div>
 
@@ -411,7 +415,7 @@ export default function SalaryPage() {
                       (r.total > 0 ? "text-[#27ae60]" : "text-[#b0b6bf]")
                     }
                   >
-                    {money(r.total)}
+                    {money(r.employee, r.total)}
                   </span>
                 </button>
               ))}

@@ -1,8 +1,9 @@
 import { BadRequestError, ConflictError } from "@/lib/errors";
-import type { CreateDirInput, PatchDirInput } from "@/dto/settings.dto";
+import type { CreateDirInput, PatchDirInput, ShiftSettingsInput } from "@/dto/settings.dto";
 import * as clientsRepo from "@/repositories/clients.repo";
 import * as employeesRepo from "@/repositories/employees.repo";
 import * as suppliersRepo from "@/repositories/suppliers.repo";
+import * as appSettingsRepo from "@/repositories/appSettings.repo";
 
 type DirRow = {
   id: number;
@@ -10,6 +11,7 @@ type DirRow = {
   phone: string | null;
   comment: string | null;
   archived: boolean | null;
+  hidden?: boolean | null;
 };
 
 const shape = (r: DirRow, opsCount: number) => ({
@@ -18,6 +20,7 @@ const shape = (r: DirRow, opsCount: number) => ({
   phone: r.phone ?? "",
   comment: r.comment ?? "",
   archived: !!r.archived,
+  hidden: !!r.hidden,
   opsCount,
 });
 
@@ -93,8 +96,28 @@ export async function updateEmployee(input: PatchDirInput) {
     }
   }
   const set = patchFields(input);
+  if (input.hidden !== undefined) set.hidden = input.hidden; // только у работников
   if (Object.keys(set).length) await employeesRepo.update(input.id, set);
   return { ok: true };
+}
+
+// ── СМЕНА: время автозакрытия ──
+const DEFAULT_SHIFT_HOUR = 21;
+
+export async function getShiftSettings() {
+  const rows = await appSettingsRepo.all();
+  const map = new Map(rows.map((r) => [r.key, r.value]));
+  const hourRaw = map.get("shift_close_hour");
+  const hour = hourRaw != null && /^\d+$/.test(hourRaw) ? Number(hourRaw) : DEFAULT_SHIFT_HOUR;
+  const enabled = map.get("shift_auto_enabled") !== "0"; // по умолчанию включено
+  return { hour: Math.min(23, Math.max(0, hour)), enabled };
+}
+
+export async function setShiftSettings(input: ShiftSettingsInput) {
+  if (input.hour !== undefined) await appSettingsRepo.upsert("shift_close_hour", String(input.hour));
+  if (input.enabled !== undefined)
+    await appSettingsRepo.upsert("shift_auto_enabled", input.enabled ? "1" : "0");
+  return getShiftSettings();
 }
 
 // ── ПОСТАВЩИКИ (счёт по имени в kons, переименование каскадом) ──
