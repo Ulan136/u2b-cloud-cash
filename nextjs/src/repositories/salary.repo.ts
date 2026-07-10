@@ -21,10 +21,24 @@ export function totalsByEmployee(from: string, to: string) {
     .select({
       employee: salary.employee,
       total: sql<string>`COALESCE(SUM(${salary.amount}), 0)`,
+      count: sql<string>`COUNT(*)`,
     })
     .from(salary)
     .where(period(from, to))
     .groupBy(salary.employee);
+}
+
+export function historyByEmployee(employee: string) {
+  return db
+    .select({
+      id: salary.id,
+      date: salary.date,
+      amount: salary.amount,
+      comment: salary.comment,
+    })
+    .from(salary)
+    .where(eq(salary.employee, employee))
+    .orderBy(desc(salary.date), desc(salary.id));
 }
 
 export function dayTotal(date: string) {

@@ -1,8 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
+
+// Контекст «глазка»: дочерние компоненты маскируют суммы через <Amt>.
+const HideCtx = createContext(false);
+function Amt({ children }: { children: React.ReactNode }) {
+  return useContext(HideCtx) ? <>••••••</> : <>{children}</>;
+}
 
 // ── типы ──
 type Category = { id: number; code: string; name: string; icon: string | null; color: string | null };
@@ -86,6 +100,7 @@ const input =
   "w-full rounded-xl bg-neutral-900 border border-neutral-800 px-3 py-3 text-base";
 
 export default function FinancePage() {
+  const { hidden, toggle } = useHideAmounts("hideFinance");
   const [tab, setTab] = useState("op");
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -181,6 +196,7 @@ export default function FinancePage() {
   }
 
   return (
+    <HideCtx.Provider value={hidden}>
     <main className="min-h-screen bg-neutral-950 text-neutral-100 pb-10">
       {/* Шапка */}
       <div className="sticky top-0 z-20 bg-gradient-to-br from-blue-700 to-sky-600 px-4 pt-4">
@@ -193,18 +209,28 @@ export default function FinancePage() {
               <div className="text-[10px] text-white/70">учёт счетов и операций</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide text-white/70">
-              Общий баланс
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggle}
+              title={hidden ? "Показать суммы" : "Скрыть суммы"}
+              className="rounded-lg bg-white/20 px-2.5 py-1.5 text-sm text-white"
+            >
+              {hidden ? "🙈" : "👁"}
+            </button>
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wide text-white/70">
+                Общий баланс
+              </div>
+              <div className="text-xl font-extrabold text-white tabular-nums">
+                <Amt>{fmt(total)}</Amt>
+              </div>
+              <LiveIndicator
+                lastUpdated={lastUpdated}
+                refreshing={refreshing}
+                className="text-white/60"
+              />
             </div>
-            <div className="text-xl font-extrabold text-white tabular-nums">
-              {fmt(total)}
-            </div>
-            <LiveIndicator
-              lastUpdated={lastUpdated}
-              refreshing={refreshing}
-              className="text-white/60"
-            />
           </div>
         </div>
 
@@ -222,7 +248,7 @@ export default function FinancePage() {
                 <div key={a.id} className="mt-1">
                   <div className="text-[11px] text-white/80 truncate">{a.name}</div>
                   <div className="text-sm font-extrabold text-white tabular-nums">
-                    {fmtNum(a.balance)}
+                    <Amt>{fmtNum(a.balance)}</Amt>
                   </div>
                 </div>
               ))}
@@ -296,6 +322,7 @@ export default function FinancePage() {
         </div>
       )}
     </main>
+    </HideCtx.Provider>
   );
 }
 
@@ -494,7 +521,7 @@ function OpRow({ op, onDelete }: { op: Op; onDelete?: (id: number) => void }) {
       </div>
       <div className={"shrink-0 text-sm font-bold tabular-nums " + color}>
         {sign}
-        {fmtNum(op.amount)}
+        <Amt>{fmtNum(op.amount)}</Amt>
       </div>
       {onDelete && (
         <button
@@ -522,6 +549,7 @@ function TrfTab({
   onSaved: () => Promise<void>;
   flash: (m: string) => void;
 }) {
+  const hidden = useContext(HideCtx);
   const [date, setDate] = useState(todayStr());
   const [from, setFrom] = useState<number | "">("");
   const [to, setTo] = useState<number | "">("");
@@ -576,7 +604,7 @@ function TrfTab({
       <select value={from} onChange={(e) => setFrom(Number(e.target.value))} className={input}>
         {accounts.map((a) => (
           <option key={a.id} value={a.id}>
-            {a.icon} {a.name} · {fmtNum(a.balance)}
+            {a.icon} {a.name} · {hidden ? "••••••" : fmtNum(a.balance)}
           </option>
         ))}
       </select>
@@ -585,7 +613,7 @@ function TrfTab({
       <select value={to} onChange={(e) => setTo(Number(e.target.value))} className={input}>
         {accounts.map((a) => (
           <option key={a.id} value={a.id}>
-            {a.icon} {a.name} · {fmtNum(a.balance)}
+            {a.icon} {a.name} · {hidden ? "••••••" : fmtNum(a.balance)}
           </option>
         ))}
       </select>
@@ -704,7 +732,7 @@ function FavTab({
                   <span className={f.type === "Приход" ? "text-emerald-400" : "text-red-400"}>
                     {f.type}
                   </span>{" "}
-                  · {fmtNum(f.amount)} ₸
+                  · <Amt>{fmtNum(f.amount)}</Amt> ₸
                 </div>
               </div>
               <button
@@ -924,12 +952,12 @@ function AccTab({
                   <div>
                     <div className="text-sm font-bold">{a.name}</div>
                     <div className="text-[11px] text-neutral-500">
-                      нач. {fmtNum(a.initialBalance)} ₸
+                      нач. <Amt>{fmtNum(a.initialBalance)}</Amt> ₸
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-base font-extrabold tabular-nums">{fmtNum(a.balance)}</div>
+                  <div className="text-base font-extrabold tabular-nums"><Amt>{fmtNum(a.balance)}</Amt></div>
                   <button
                     type="button"
                     onClick={() => toggleArchive(a)}
@@ -1059,16 +1087,16 @@ function RepTab({ accounts }: { accounts: Account[] }) {
                 <td className="px-3 py-2 text-left">
                   {r.account.icon} {r.account.name}
                 </td>
-                <td className="px-2 py-2 text-right text-emerald-400">+{fmtNum(r.income)}</td>
-                <td className="px-2 py-2 text-right text-red-400">−{fmtNum(r.expense)}</td>
-                <td className="px-3 py-2 text-right font-semibold">{fmtNum(r.account.balance)}</td>
+                <td className="px-2 py-2 text-right text-emerald-400">+<Amt>{fmtNum(r.income)}</Amt></td>
+                <td className="px-2 py-2 text-right text-red-400">−<Amt>{fmtNum(r.expense)}</Amt></td>
+                <td className="px-3 py-2 text-right font-semibold"><Amt>{fmtNum(r.account.balance)}</Amt></td>
               </tr>
             ))}
             <tr className="border-t border-neutral-700 bg-neutral-900 font-bold">
               <td className="px-3 py-2 text-left">Итого</td>
-              <td className="px-2 py-2 text-right text-emerald-400">+{fmtNum(totals.income)}</td>
-              <td className="px-2 py-2 text-right text-red-400">−{fmtNum(totals.expense)}</td>
-              <td className="px-3 py-2 text-right">{fmtNum(totalBalance)}</td>
+              <td className="px-2 py-2 text-right text-emerald-400">+<Amt>{fmtNum(totals.income)}</Amt></td>
+              <td className="px-2 py-2 text-right text-red-400">−<Amt>{fmtNum(totals.expense)}</Amt></td>
+              <td className="px-3 py-2 text-right"><Amt>{fmtNum(totalBalance)}</Amt></td>
             </tr>
           </tbody>
         </table>

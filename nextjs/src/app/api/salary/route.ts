@@ -5,6 +5,13 @@ import * as salaryService from "@/services/salary.service";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
+
+  // История конкретного сотрудника
+  const employee = sp.get("employee");
+  if (employee) {
+    return NextResponse.json(await salaryService.getEmployeeHistory(employee));
+  }
+
   const from = sp.get("from");
   const to = sp.get("to");
   if (!from || !to || !DATE_RE.test(from) || !DATE_RE.test(to)) {

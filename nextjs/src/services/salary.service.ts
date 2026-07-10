@@ -6,10 +6,10 @@ import * as salaryRepo from "@/repositories/salary.repo";
 export async function getReport(from: string, to: string, date: string | null) {
   const entries = await salaryRepo.findInPeriod(from, to);
 
-  // Сводка по сотрудникам за период (аналог SUMIFS H6:H24)
+  // Сводка по сотрудникам за период (аналог SUMIFS H6:H24) + кол-во выплат
   const byEmpRaw = await salaryRepo.totalsByEmployee(from, to);
   const byEmployee = byEmpRaw
-    .map((r) => ({ employee: r.employee, total: Number(r.total) }))
+    .map((r) => ({ employee: r.employee, total: Number(r.total), count: Number(r.count) }))
     .sort((a, b) => b.total - a.total);
   const totalPeriod = byEmployee.reduce((s, e) => s + e.total, 0);
 
@@ -25,6 +25,11 @@ export async function getReport(from: string, to: string, date: string | null) {
   const employees = empRows.map((r) => r.employee);
 
   return { entries, byEmployee, totalPeriod, dayTotal, employees };
+}
+
+export async function getEmployeeHistory(employee: string) {
+  const history = await salaryRepo.historyByEmployee(employee);
+  return { history };
 }
 
 export async function createEntry(input: CreateSalaryInput) {
