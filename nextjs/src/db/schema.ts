@@ -7,6 +7,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const clients = pgTable("clients", {
@@ -111,6 +112,20 @@ export const finOps = pgTable("fin_ops", {
   comment: text("comment"),
   toAccountId: integer("to_account_id").references(() => finAccounts.id),
 });
+
+// Себестоимость помесячно (для годового отчёта). Отдельно от cash_days.sebestoimost.
+export const monthlyCosts = pgTable(
+  "monthly_costs",
+  {
+    id: serial("id").primaryKey(),
+    year: integer("year").notNull(),
+    month: integer("month").notNull(),
+    sebestoimost: numeric("sebestoimost").default("0"),
+  },
+  (t) => ({
+    ym: unique("monthly_costs_year_month_unique").on(t.year, t.month),
+  })
+);
 
 export const finFavs = pgTable("fin_favs", {
   id: serial("id").primaryKey(),
