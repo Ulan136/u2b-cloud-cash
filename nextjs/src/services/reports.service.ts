@@ -89,6 +89,8 @@ export async function getReport(from: string, to: string) {
       sebestoimost: num(day.sebestoimost),
       obshchReal: Math.round(obshchReal * 100) / 100,
       minPlus,
+      closed: day.closed ?? false,
+      closedBy: day.closedBy ?? null,
     };
   });
   accumulated = Math.round(accumulated * 100) / 100;

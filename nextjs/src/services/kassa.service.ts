@@ -36,9 +36,9 @@ export async function getDay(date: string) {
 }
 
 export async function saveDay(input: SaveDayInput) {
-  const { date, day, expenses } = input;
+  const { date, day, expenses, action } = input;
 
-  const values = {
+  const base = {
     date,
     klaudObshch: money(day.klaudObshch),
     nalichnye: money(day.nalichnye),
@@ -49,6 +49,13 @@ export async function saveDay(input: SaveDayInput) {
     zakupTovar: money(day.zakupTovar),
     comment: day.comment ?? "",
   };
+  // «Сохранить» не трогает статус смены; «Закрыть»/«Переоткрыть» его меняют.
+  const values =
+    action === "close"
+      ? { ...base, closed: true, closedAt: new Date(), closedBy: "manual" }
+      : action === "reopen"
+        ? { ...base, closed: false, closedAt: null, closedBy: null }
+        : base;
   const { date: _d, ...set } = values;
   await cashDaysRepo.upsert(values, set);
 
@@ -67,7 +74,22 @@ export async function saveDay(input: SaveDayInput) {
     await expensesRepo.insertMany(rows);
   }
 
-  return { ok: true };
+  return { ok: true, closed: action === "close" ? true : action === "reopen" ? false : undefined };
+}
+
+// Автозакрытие смены (Vercel Cron в 21:00 Алматы).
+// Если день не закрыт — закрыть как auto; если записи нет — создать пустую закрытую.
+export async function autoCloseToday(today: string) {
+  const [existing] = await cashDaysRepo.findByDate(today);
+  if (existing?.closed) {
+    return { status: "already-closed", date: today };
+  }
+  const now = new Date();
+  await cashDaysRepo.upsert(
+    { date: today, closed: true, closedAt: now, closedBy: "auto" },
+    { closed: true, closedAt: now, closedBy: "auto" }
+  );
+  return { status: existing ? "closed" : "created-closed", date: today };
 }
 
 // Архив дней: последние дни с кассой + их МИН/ПЛЮС (новые сверху).

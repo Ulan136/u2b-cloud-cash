@@ -24,6 +24,8 @@ type PerDay = {
   sebestoimost: number;
   obshchReal: number;
   minPlus: number;
+  closed: boolean;
+  closedBy: string | null;
 };
 type MonthAnalysis = {
   gap: { accumulated: number; perDay: PerDay[] };
@@ -253,7 +255,17 @@ export default function ReportsPage() {
                 <tbody>
                   {(monthData?.gap.perDay ?? []).map((d) => (
                     <tr key={d.date} className="border-t border-neutral-800">
-                      <td className="px-2 py-1.5 text-left text-neutral-400">{d.date.slice(8)}</td>
+                      <td className="px-2 py-1.5 text-left text-neutral-400">
+                        {d.date.slice(8)}
+                        {d.closed && (
+                          <span
+                            title={d.closedBy === "auto" ? "закрыта автоматически" : "закрыта вручную"}
+                            className="ml-1"
+                          >
+                            {d.closedBy === "auto" ? "🕘" : "🔒"}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-2 py-1.5 text-right">{fmt(d.klaud)}</td>
                       <td className="px-2 py-1.5 text-right">{fmt(d.obshchReal)}</td>
                       <td className={"px-2 py-1.5 text-right font-semibold " + diffColor(d.minPlus)}>

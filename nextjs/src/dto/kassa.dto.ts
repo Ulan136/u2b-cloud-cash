@@ -20,6 +20,7 @@ export const saveDaySchema = z.object({
       comment: z.string().optional().default(""),
     })
   ),
+  action: z.enum(["save", "close", "reopen"]).optional().default("save"),
 });
 export type SaveDayInput = z.infer<typeof saveDaySchema>;
 

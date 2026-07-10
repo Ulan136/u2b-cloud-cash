@@ -82,6 +82,9 @@ export default function KassaPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const [closed, setClosed] = useState(false);
+  const [closedAt, setClosedAt] = useState<string | null>(null);
+  const [closedBy, setClosedBy] = useState<string | null>(null);
 
   const archRange = useMemo(() => {
     const t = new Date();
@@ -111,6 +114,10 @@ export default function KassaPage() {
 
         setTotals(data.totals ?? { debt: "0", payment: "0" });
         setArchive(arch.days ?? []);
+        // статус смены обновляем всегда (в т.ч. если авто-закрытие произошло в фоне)
+        setClosed(Boolean(data.day?.closed));
+        setClosedAt(data.day?.closedAt ?? null);
+        setClosedBy(data.day?.closedBy ?? null);
 
         if (!background) {
           setDay(
@@ -174,7 +181,10 @@ export default function KassaPage() {
     return { debt, vozvratDolg, rashod, obshchReal, minPlus };
   }, [day, totals, expensesTotal]);
 
-  async function save() {
+  async function submit(action: "save" | "close" | "reopen") {
+    if (action === "close" && !window.confirm("Закрыть смену? День станет доступен только для просмотра."))
+      return;
+    if (action === "reopen" && !window.confirm("Переоткрыть смену для исправлений?")) return;
     setSaving(true);
     setStatus("");
     try {
@@ -188,13 +198,15 @@ export default function KassaPage() {
       const res = await fetch("/api/kassa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day, expenses }),
+        body: JSON.stringify({ date, day, expenses, action }),
       });
       if (!res.ok) throw new Error();
-      setStatus("Сохранено ✓");
+      setStatus(
+        action === "close" ? "Смена закрыта ✓" : action === "reopen" ? "Смена переоткрыта" : "Сохранено ✓"
+      );
       await load({ background: false });
     } catch {
-      setStatus("Ошибка сохранения");
+      setStatus("Ошибка");
     } finally {
       setSaving(false);
     }
@@ -211,7 +223,8 @@ export default function KassaPage() {
         value={day[key]}
         onChange={(e) => setField(key, e.target.value)}
         placeholder="0"
-        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30"
+        disabled={closed}
+        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30 disabled:opacity-60"
       />
     </div>
   );
@@ -246,7 +259,7 @@ export default function KassaPage() {
           </span>
         </header>
 
-        {/* Дата + сохранить */}
+        {/* Дата + бейдж закрытия */}
         <div className="mb-3 flex items-center gap-2">
           <input
             type="date"
@@ -254,14 +267,15 @@ export default function KassaPage() {
             onChange={(e) => setDate(e.target.value)}
             className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm"
           />
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving || loading}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 active:bg-emerald-700"
-          >
-            {saving ? "…" : "Сохранить"}
-          </button>
+          {closed && (
+            <span className="shrink-0 rounded-lg border border-cyan-800 bg-cyan-950/40 px-3 py-2 text-xs font-semibold text-cyan-300">
+              🔒 Смена закрыта
+              {closedAt
+                ? ` в ${new Date(closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
+                : ""}{" "}
+              ({closedBy === "auto" ? "авто" : "вручную"})
+            </span>
+          )}
         </div>
 
         {/* Две колонки: слева касса, справа расходы */}
@@ -326,7 +340,8 @@ export default function KassaPage() {
                       value={exp[cat]?.amount ?? ""}
                       onChange={(e) => updateExp(cat, { amount: e.target.value })}
                       placeholder="0"
-                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30"
+                      disabled={closed}
+                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-emerald-900/30 disabled:opacity-60"
                     />
                   </div>
                   {openComments[cat] && (
@@ -334,7 +349,8 @@ export default function KassaPage() {
                       value={exp[cat]?.comment ?? ""}
                       onChange={(e) => updateExp(cat, { comment: e.target.value })}
                       placeholder="комментарий"
-                      className="w-full bg-neutral-900 px-3 py-1.5 text-xs outline-none"
+                      disabled={closed}
+                      className="w-full bg-neutral-900 px-3 py-1.5 text-xs outline-none disabled:opacity-60"
                     />
                   )}
                 </div>
@@ -343,21 +359,45 @@ export default function KassaPage() {
           </div>
         </div>
 
-        {/* Комментарий дня + сохранить снизу */}
+        {/* Комментарий дня */}
         <input
           value={day.comment}
           onChange={(e) => setField("comment", e.target.value)}
           placeholder="Комментарий дня"
-          className="mt-3 w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm"
+          disabled={closed}
+          className="mt-3 w-full rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm disabled:opacity-60"
         />
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || loading}
-          className="mt-3 w-full rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white disabled:opacity-50 active:bg-emerald-700"
-        >
-          {saving ? "Сохранение…" : "Сохранить"}
-        </button>
+
+        {/* Кнопки: черновик + закрытие, либо переоткрытие */}
+        {closed ? (
+          <button
+            type="button"
+            onClick={() => submit("reopen")}
+            disabled={saving}
+            className="mt-3 w-full rounded-lg border border-neutral-700 bg-neutral-900 py-3 text-base font-semibold text-neutral-200 disabled:opacity-50 active:bg-neutral-800"
+          >
+            🔓 Переоткрыть смену
+          </button>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => submit("save")}
+              disabled={saving || loading}
+              className="rounded-lg bg-emerald-600 py-3 text-base font-semibold text-white disabled:opacity-50 active:bg-emerald-700"
+            >
+              {saving ? "…" : "Сохранить"}
+            </button>
+            <button
+              type="button"
+              onClick={() => submit("close")}
+              disabled={saving || loading}
+              className="rounded-lg bg-teal-500 py-3 text-base font-extrabold text-white disabled:opacity-50 active:bg-teal-600"
+            >
+              ЗАКРЫТЬ СМЕНУ
+            </button>
+          </div>
+        )}
 
         {/* Архив дней */}
         <section className="mt-5">

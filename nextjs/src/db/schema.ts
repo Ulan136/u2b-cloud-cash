@@ -35,6 +35,9 @@ export const cashDays = pgTable("cash_days", {
   vozvrat: numeric("vozvrat").default("0"),
   zakupTovar: numeric("zakup_tovar").default("0"),
   comment: text("comment"),
+  closed: boolean("closed").default(false),
+  closedAt: timestamp("closed_at"),
+  closedBy: text("closed_by"), // 'manual' | 'auto'
 });
 
 export const cashExpenses = pgTable("cash_expenses", {
