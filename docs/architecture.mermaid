@@ -1,0 +1,55 @@
+flowchart TB
+    subgraph CLIENT["🌐 Клиент"]
+        USER["Пользователь / Браузер"]
+    end
+
+    subgraph ROUTING["🚦 Маршрутизация"]
+        ROUTER["Router<br/>(определяет, какой Controller вызвать)"]
+        MW["Middleware<br/>(auth, валидация, логирование, rate-limit)"]
+    end
+
+    subgraph CONTROLLER_LAYER["🎮 Controller — тонкий слой"]
+        CTRL["Controller<br/>1. Принимает Request<br/>2. Валидирует входные данные (DTO)<br/>3. Вызывает Service<br/>4. Возвращает Response"]
+    end
+
+    subgraph SERVICE_LAYER["⚙️ Service — бизнес-логика"]
+        SVC["Service / Use Case<br/>• Вся бизнес-логика здесь<br/>• Транзакции<br/>• Оркестрация нескольких моделей<br/>• Не знает про HTTP"]
+    end
+
+    subgraph MODEL_LAYER["🗃️ Model — данные"]
+        REPO["Repository<br/>(абстракция над БД:<br/>find, create, update, delete)"]
+        ENTITY["Entity / Model<br/>(структура данных,<br/>правила предметной области)"]
+        DB[("База данных")]
+    end
+
+    subgraph VIEW_LAYER["🖼️ View — отображение"]
+        VIEW["View / Template<br/>(HTML, JSON-сериализатор)<br/>• Никакой логики, кроме отображения"]
+    end
+
+    USER -->|"HTTP Request"| ROUTER
+    ROUTER --> MW
+    MW --> CTRL
+    CTRL -->|"вызов метода<br/>с чистыми данными"| SVC
+    SVC --> REPO
+    REPO --> ENTITY
+    REPO <-->|"SQL / ORM"| DB
+    SVC -->|"результат (домен-объект)"| CTRL
+    CTRL -->|"данные для рендера"| VIEW
+    VIEW -->|"HTTP Response<br/>(HTML / JSON)"| USER
+
+    style CTRL fill:#e1f5fe
+    style SVC fill:#fff3e0
+    style REPO fill:#e8f5e9
+    style VIEW fill:#f3e5f5
+
+
+
+src/
+├── routes/          # маршруты → контроллеры
+├── middlewares/     # auth, валидация, ошибки
+├── controllers/     # тонкие, только HTTP
+├── services/        # бизнес-логика
+├── repositories/    # доступ к данным
+├── models/          # entity, схемы
+├── views/           # шаблоны или сериализаторы
+└── dto/             # объекты входных/выходных данных
