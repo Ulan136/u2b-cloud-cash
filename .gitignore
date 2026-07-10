@@ -6,3 +6,10 @@ node_modules/
 drizzle/
 *.log
 код неон.txt
+
+.vercel
+.env*
+
+# импорт: исходник и бэкап не коммитим
+import.xlsx
+backup-before-import.json
