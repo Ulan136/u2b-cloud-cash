@@ -367,6 +367,16 @@ export default function KonsPage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
               Анализ остатков
             </div>
+            {/* ОБЩИЙ ОСТАТОК — крупно сверху */}
+            <div className="rounded-xl border border-red-900/60 bg-red-950/25 p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+                Общий остаток (сколько мы должны)
+                {search || statusFilter !== "all" ? " · по фильтру" : ""}
+              </div>
+              <div className="text-2xl font-extrabold tabular-nums text-red-400">
+                {fmt(search || statusFilter !== "all" ? shownTotal : totalOstatok)}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="mb-1 block text-[11px] text-neutral-500">период с</span>
@@ -467,14 +477,6 @@ export default function KonsPage() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2">
-              <span className="text-sm text-neutral-400">
-                Итого{search || statusFilter !== "all" ? " (по фильтру)" : ""}
-              </span>
-              <span className="text-lg font-bold tabular-nums text-red-400">
-                {fmt(search || statusFilter !== "all" ? shownTotal : totalOstatok)}
-              </span>
-            </div>
           </section>
         </div>
       </div>

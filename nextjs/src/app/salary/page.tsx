@@ -194,8 +194,6 @@ export default function SalaryPage() {
   }, [byEmployee, search, sortKey, sortDir]);
 
   const shownFund = useMemo(() => rows.reduce((s, b) => s + b.total, 0), [rows]);
-  const shownCount = useMemo(() => rows.reduce((s, b) => s + b.count, 0), [rows]);
-  const avgPayment = shownCount ? shownFund / shownCount : 0;
   const sortMark = (k: SortKey) => (sortKey === k ? (sortDir === "asc" ? " ▲" : " ▼") : "");
 
   return (
@@ -376,6 +374,15 @@ export default function SalaryPage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
               Анализ за период
             </div>
+            {/* ИТОГО фонд — крупно сверху */}
+            <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wide text-neutral-400">
+                Фонд за период{search ? " (по фильтру)" : ""}
+              </div>
+              <div className="text-2xl font-extrabold tabular-nums text-emerald-400">
+                {money(search ? shownFund : totalPeriod)}
+              </div>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { k: "week", label: "Неделя", r: weekRange },
@@ -436,9 +443,8 @@ export default function SalaryPage() {
                   <tr>
                     {(
                       [
-                        ["employee", "Сотрудник", "text-left"],
-                        ["count", "Выплат", "text-right"],
-                        ["total", "Сумма", "text-right"],
+                        ["employee", "ФИО", "text-left"],
+                        ["total", "Выплачено", "text-right"],
                       ] as [SortKey, string, string][]
                     ).map(([k, label, align]) => (
                       <th
@@ -463,7 +469,6 @@ export default function SalaryPage() {
                       }
                     >
                       <td className="px-3 py-2 text-left">{b.employee}</td>
-                      <td className="px-3 py-2 text-right text-neutral-400">{b.count}</td>
                       <td className="px-3 py-2 text-right font-semibold text-emerald-400">
                         {money(b.total)}
                       </td>
@@ -471,7 +476,7 @@ export default function SalaryPage() {
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="px-3 py-4 text-center text-neutral-500">
+                      <td colSpan={2} className="px-3 py-4 text-center text-neutral-500">
                         Нет данных за период
                       </td>
                     </tr>
@@ -480,18 +485,6 @@ export default function SalaryPage() {
               </table>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2">
-                <div className="text-[11px] text-neutral-400">Фонд за период</div>
-                <div className="text-lg font-bold tabular-nums text-emerald-400">
-                  {money(search ? shownFund : totalPeriod)}
-                </div>
-              </div>
-              <div className="rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2">
-                <div className="text-[11px] text-neutral-400">Средняя выплата</div>
-                <div className="text-lg font-bold tabular-nums">{money(avgPayment)}</div>
-              </div>
-            </div>
           </section>
         </div>
       </div>
