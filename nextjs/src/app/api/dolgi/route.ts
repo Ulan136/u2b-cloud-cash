@@ -15,11 +15,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(await dolgiService.getClientHistory(id));
   }
 
-  const date = sp.get("date");
-  if (!date || !DATE_RE.test(date)) {
-    return NextResponse.json({ error: "date (YYYY-MM-DD) обязателен" }, { status: 400 });
-  }
-  return NextResponse.json(await dolgiService.getByDate(date));
+  // Анализ остатков: период опционален; today приходит с клиента (локальная дата).
+  const from = sp.get("from");
+  const to = sp.get("to");
+  const today =
+    sp.get("today") && DATE_RE.test(sp.get("today")!)
+      ? sp.get("today")!
+      : new Date().toISOString().slice(0, 10);
+  const period =
+    from && to && DATE_RE.test(from) && DATE_RE.test(to) ? { from, to } : {};
+  return NextResponse.json(await dolgiService.getAnalysis({ ...period, today }));
 }
 
 export async function POST(req: NextRequest) {

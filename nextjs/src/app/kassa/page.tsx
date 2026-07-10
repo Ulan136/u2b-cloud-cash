@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
@@ -213,12 +212,6 @@ export default function KassaPage() {
     <main className="min-h-screen bg-neutral-950 text-neutral-100 px-3 py-4">
       <div className="mx-auto w-full max-w-md">
         <header className="mb-3 flex items-center gap-2">
-          <Link
-            href="/"
-            className="rounded-lg bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-sm"
-          >
-            ←
-          </Link>
           <h1 className="text-xl font-bold">Касса</h1>
           <span className="ml-auto flex items-center gap-2 text-xs text-neutral-500">
             {status && <span>{status}</span>}

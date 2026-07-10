@@ -47,16 +47,27 @@ export function dayTotals(date: string) {
     .where(eq(debts.date, date));
 }
 
-export function clientBalancesRaw() {
+export function clientBalancesRaw(opts: { from?: string; to?: string; today: string }) {
+  // период (если задан) применяем в условии JOIN, чтобы клиенты без строк не выпадали
+  const joinCond =
+    opts.from && opts.to
+      ? and(
+          eq(debts.clientId, clients.id),
+          gte(debts.date, opts.from),
+          lte(debts.date, opts.to)
+        )
+      : eq(debts.clientId, clients.id);
+
   return db
     .select({
       id: clients.id,
       name: clients.name,
       debts: sql<string>`COALESCE(SUM(${debts.debtAmount}), 0)`,
       payments: sql<string>`COALESCE(SUM(${debts.paymentAmount}), 0)`,
+      hasOverdue: sql<boolean>`COALESCE(BOOL_OR(${debts.returnDate} IS NOT NULL AND ${debts.returnDate} < ${opts.today}), false)`,
     })
     .from(clients)
-    .leftJoin(debts, eq(debts.clientId, clients.id))
+    .leftJoin(debts, joinCond)
     .groupBy(clients.id, clients.name);
 }
 

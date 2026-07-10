@@ -30,7 +30,9 @@ export function findInPeriod(from: string, to: string) {
     .orderBy(desc(kons.date), desc(kons.id));
 }
 
-export function balancesRaw() {
+export function balancesRaw(opts?: { from?: string; to?: string }) {
+  const cond =
+    opts?.from && opts?.to ? period(opts.from, opts.to) : undefined;
   return db
     .select({
       supplier: kons.supplier,
@@ -38,6 +40,7 @@ export function balancesRaw() {
       rashod: sql<string>`COALESCE(SUM(${kons.rashod}), 0)`,
     })
     .from(kons)
+    .where(cond)
     .groupBy(kons.supplier);
 }
 

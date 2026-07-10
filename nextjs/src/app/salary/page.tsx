@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
@@ -110,12 +109,6 @@ export default function SalaryPage() {
     <main className="min-h-screen bg-neutral-950 text-neutral-100 px-4 py-6">
       <div className="mx-auto w-full max-w-md">
         <header className="mb-5 flex items-center gap-3">
-          <Link
-            href="/"
-            className="rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-2 text-sm"
-          >
-            ← Меню
-          </Link>
           <h1 className="text-2xl font-bold">Зарплата</h1>
           <span className="ml-auto">
             <LiveIndicator lastUpdated={lastUpdated} refreshing={refreshing} />

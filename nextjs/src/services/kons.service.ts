@@ -2,11 +2,11 @@ import { money } from "@/lib/money";
 import type { CreateKonsInput } from "@/dto/kons.dto";
 import * as konsRepo from "@/repositories/kons.repo";
 
-export async function getByPeriod(from: string, to: string) {
-  const entries = await konsRepo.findInPeriod(from, to);
-
-  // Остатки по поставщикам (аналог QUERY-формулы J7), за всё время
-  const balancesRaw = await konsRepo.balancesRaw();
+// Анализ остатков по поставщикам (правая панель). Период опционален (по умолчанию всё время).
+export async function getAnalysis(opts: { from?: string; to?: string }) {
+  const balancesRaw = await konsRepo.balancesRaw(
+    opts.from && opts.to ? { from: opts.from, to: opts.to } : undefined
+  );
   const balances = balancesRaw
     .map((b) => {
       const prihod = Number(b.prihod);
@@ -21,7 +21,7 @@ export async function getByPeriod(from: string, to: string) {
   const supRows = await konsRepo.distinctSuppliers();
   const suppliers = supRows.map((r) => r.supplier);
 
-  return { entries, balances, totalOstatok, suppliers };
+  return { balances, totalOstatok, suppliers };
 }
 
 export async function getSupplierHistory(supplier: string) {

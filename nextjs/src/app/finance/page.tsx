@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
@@ -187,12 +186,6 @@ export default function FinancePage() {
       <div className="sticky top-0 z-20 bg-gradient-to-br from-blue-700 to-sky-600 px-4 pt-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="rounded-lg bg-white/20 px-2 py-1 text-sm text-white"
-            >
-              ←
-            </Link>
             <div>
               <div className="text-sm font-extrabold tracking-wide text-white">
                 U-PAY · Финансы

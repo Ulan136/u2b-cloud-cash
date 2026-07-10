@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(await konsService.getSupplierHistory(supplier));
   }
 
+  // Анализ остатков: период опционален (по умолчанию всё время).
   const from = sp.get("from");
   const to = sp.get("to");
-  if (!from || !to || !DATE_RE.test(from) || !DATE_RE.test(to)) {
-    return NextResponse.json({ error: "from и to (YYYY-MM-DD) обязательны" }, { status: 400 });
-  }
-  return NextResponse.json(await konsService.getByPeriod(from, to));
+  const period =
+    from && to && DATE_RE.test(from) && DATE_RE.test(to) ? { from, to } : {};
+  return NextResponse.json(await konsService.getAnalysis(period));
 }
 
 export async function POST(req: NextRequest) {
