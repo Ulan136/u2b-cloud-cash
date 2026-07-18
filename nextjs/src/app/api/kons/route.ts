@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DATE_RE } from "@/lib/validation";
-import { createKonsSchema } from "@/dto/kons.dto";
+import { createKonsSchema, updateKonsSchema } from "@/dto/kons.dto";
+import { checkEditPassword } from "@/lib/editAuth";
 import * as konsService from "@/services/kons.service";
 
 export async function GET(req: NextRequest) {
@@ -25,6 +26,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   return NextResponse.json(await konsService.createEntry(parsed.data));
+}
+
+export async function PATCH(req: NextRequest) {
+  const parsed = updateKonsSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  if (!checkEditPassword(parsed.data.password)) {
+    return NextResponse.json({ error: "Неверный пароль" }, { status: 403 });
+  }
+  return NextResponse.json(await konsService.updateEntry(parsed.data));
 }
 
 export async function DELETE(req: NextRequest) {

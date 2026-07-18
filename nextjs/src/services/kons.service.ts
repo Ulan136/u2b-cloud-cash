@@ -1,5 +1,5 @@
 import { money } from "@/lib/money";
-import type { CreateKonsInput } from "@/dto/kons.dto";
+import type { CreateKonsInput, UpdateKonsInput } from "@/dto/kons.dto";
 import * as konsRepo from "@/repositories/kons.repo";
 
 // Правая панель — постоянный список поставщиков с ОСТАТКОМ за всё время.
@@ -35,6 +35,16 @@ export async function createEntry(input: CreateKonsInput) {
   const [entry] = await konsRepo.create({
     date: input.date,
     supplier: input.supplier,
+    prihod: money(input.prihod),
+    rashod: money(input.rashod),
+    comment: input.comment ?? "",
+  });
+  return { entry };
+}
+
+// Изменение суммы/комментария записи; остаток за всё время пересчитывается из строк kons.
+export async function updateEntry(input: UpdateKonsInput) {
+  const [entry] = await konsRepo.updateById(input.id, {
     prihod: money(input.prihod),
     rashod: money(input.rashod),
     comment: input.comment ?? "",

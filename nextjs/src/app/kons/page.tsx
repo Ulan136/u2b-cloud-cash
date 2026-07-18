@@ -6,14 +6,6 @@ import { LiveIndicator } from "@/components/LiveIndicator";
 import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
 
 type Balance = { supplier: string; prihod: number; rashod: number; ostatok: number };
-type Entry = {
-  id: number;
-  date: string;
-  supplier: string;
-  prihod: string;
-  rashod: string;
-  comment: string | null;
-};
 type HistoryRow = { id: number; date: string; prihod: string; rashod: string; comment: string | null };
 
 const num = (v: string) => {
@@ -29,16 +21,6 @@ function fmtLocal(d: Date) {
   return `${y}-${m}-${day}`;
 }
 const todayStr = () => fmtLocal(new Date());
-function weekRange() {
-  const t = new Date();
-  const f = new Date();
-  f.setDate(t.getDate() - 6);
-  return { from: fmtLocal(f), to: fmtLocal(t) };
-}
-function monthRange() {
-  const t = new Date();
-  return { from: fmtLocal(new Date(t.getFullYear(), t.getMonth(), 1)), to: fmtLocal(t) };
-}
 
 const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
@@ -69,12 +51,15 @@ export default function KonsPage() {
   const [balances, setBalances] = useState<Balance[]>([]);
   const [totalOstatok, setTotalOstatok] = useState(0);
   const [dirSuppliers, setDirSuppliers] = useState<DirItem[]>([]);
-  const [entries, setEntries] = useState<Entry[]>([]);
 
   // выбранный поставщик
   const [selected, setSelected] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedRef = useRef<string | null>(null);
+
+  // фильтр периода истории (по умолчанию — вся история)
+  const [histFrom, setHistFrom] = useState("");
+  const [histTo, setHistTo] = useState("");
 
   // форма-строка
   const [formSupplier, setFormSupplier] = useState("");
@@ -85,20 +70,21 @@ export default function KonsPage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
-  // период (для журнала) + поиск (для списка)
-  const initRange = useMemo(() => monthRange(), []);
-  const [from, setFrom] = useState(initRange.from);
-  const [to, setTo] = useState(initRange.to);
-  const [preset, setPreset] = useState("month");
+  // редактирование записи истории
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editPrihod, setEditPrihod] = useState("");
+  const [editRashod, setEditRashod] = useState("");
+  const [editComment, setEditComment] = useState("");
+
+  // поиск по списку поставщиков (правая панель)
   const [search, setSearch] = useState("");
 
   const loadAnalysis = useCallback(async () => {
-    const res = await fetch(`/api/kons?from=${from}&to=${to}`);
+    const res = await fetch("/api/kons");
     const d = await res.json();
     setBalances(d.balances ?? []);
     setTotalOstatok(d.totalOstatok ?? 0);
-    setEntries(d.entries ?? []);
-  }, [from, to]);
+  }, []);
 
   const loadDir = useCallback(async () => {
     const res = await fetch("/api/settings/suppliers?archived=0");
@@ -123,7 +109,7 @@ export default function KonsPage() {
     if (selectedRef.current) await loadHistory(selectedRef.current);
   }, [loadAnalysis, loadDir, loadHistory]);
 
-  const { refreshing, lastUpdated } = useLiveData("kons", load, [from, to]);
+  const { refreshing, lastUpdated } = useLiveData("kons", load, []);
 
   async function createSupplier(name: string, phone: string): Promise<DirItem | null> {
     const res = await fetch("/api/settings/suppliers", {
@@ -153,16 +139,30 @@ export default function KonsPage() {
       .sort((a, b) => b.ostatok - a.ostatok);
   }, [dirSuppliers, balances, search]);
 
-  function applyPreset(name: string, range: { from: string; to: string }) {
-    setPreset(name);
-    setFrom(range.from);
-    setTo(range.to);
-  }
+  const selectedPhone = useMemo(
+    () => dirSuppliers.find((s) => s.name === selected)?.phone ?? null,
+    [dirSuppliers, selected]
+  );
+
+  // Остаток — всегда за всё время (приход минус оплаты по полной истории).
+  const supplierOstatok = useMemo(() => {
+    if (!history) return 0;
+    return history.reduce((s, h) => s + num(h.prihod) - num(h.rashod), 0);
+  }, [history]);
+
+  // История с учётом фильтра периода (для отображения).
+  const shownHistory = useMemo(() => {
+    if (!history) return [];
+    return history.filter(
+      (h) => (!histFrom || h.date >= histFrom) && (!histTo || h.date <= histTo)
+    );
+  }, [history, histFrom, histTo]);
 
   function selectSupplier(name: string) {
     selectedRef.current = name;
     setSelected(name);
     setFormSupplier(name);
+    setEditId(null);
     setHistory(null);
     loadHistory(name);
   }
@@ -170,6 +170,7 @@ export default function KonsPage() {
     selectedRef.current = null;
     setSelected(null);
     setHistory(null);
+    setEditId(null);
   }
 
   async function save() {
@@ -199,13 +200,33 @@ export default function KonsPage() {
     }
   }
 
-  async function removeEntry(id: number) {
-    if (!window.confirm("Удалить запись?")) return;
-    const res = await fetch(`/api/kons?id=${id}`, { method: "DELETE" });
-    if (res.ok) {
-      await loadAnalysis();
-      if (selectedRef.current) await loadHistory(selectedRef.current);
-    }
+  function startEdit(h: HistoryRow) {
+    setEditId(h.id);
+    setEditPrihod(num(h.prihod) ? String(num(h.prihod)) : "");
+    setEditRashod(num(h.rashod) ? String(num(h.rashod)) : "");
+    setEditComment(h.comment ?? "");
+  }
+
+  async function saveEdit() {
+    if (editId == null) return;
+    const password = window.prompt("Пароль для изменения записи:");
+    if (password === null) return; // отмена ввода пароля
+    const res = await fetch("/api/kons", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editId,
+        prihod: editPrihod,
+        rashod: editRashod,
+        comment: editComment,
+        password,
+      }),
+    });
+    if (res.status === 403) return setStatus("Неверный пароль — изменение не применено");
+    if (!res.ok) return setStatus("Ошибка изменения");
+    setEditId(null);
+    setStatus("Изменено ✓");
+    if (selectedRef.current) await Promise.all([loadAnalysis(), loadHistory(selectedRef.current)]);
   }
 
   return (
@@ -219,10 +240,13 @@ export default function KonsPage() {
         </header>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* ЛЕВАЯ: форма + журнал */}
+          {/* ЛЕВАЯ: форма внесения (сверху) + карточка поставщика */}
           <section className="space-y-4">
             {/* Форма одной строкой */}
             <div className={panel}>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                Внести {selected ? `— ${selected}` : ""}
+              </div>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block w-32">
                   <span className="mb-1 block text-[11px] text-[#6b7280]">Дата</span>
@@ -262,97 +286,195 @@ export default function KonsPage() {
               {status && <p className="mt-2 text-xs text-[#374151]">{status}</p>}
             </div>
 
-            {/* Журнал за период / история выбранного */}
-            <div className={panel}>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                  {selected ? `История: ${selected}` : "Журнал за период"}
-                </span>
-                {selected && (
-                  <button type="button" onClick={clearSelection} className="text-[11px] text-[#27ae60] underline">
-                    ← весь журнал
-                  </button>
-                )}
-              </div>
-
-              {!selected && (
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  {[
-                    { k: "week", label: "Неделя", r: weekRange },
-                    { k: "month", label: "Месяц", r: monthRange },
-                  ].map((b) => (
-                    <button
-                      key={b.k}
-                      type="button"
-                      onClick={() => applyPreset(b.k, b.r())}
+            {/* Карточка выбранного поставщика (остаток за всё время + история) */}
+            {selected ? (
+              <div className={panel}>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <div>
+                    <div className="text-lg font-bold">{selected}</div>
+                    {selectedPhone && <div className="text-xs text-[#9ca3af]">{selectedPhone}</div>}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase text-[#6b7280]">Остаток (за всё время)</div>
+                    <div
                       className={
-                        "rounded-lg border px-3 py-1.5 text-xs font-semibold " +
-                        (preset === b.k
-                          ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
-                          : "border-[#e5e7eb] bg-white text-[#6b7280]")
+                        "text-2xl font-extrabold tabular-nums " +
+                        (supplierOstatok > 0
+                          ? "text-[#e02424]"
+                          : supplierOstatok < 0
+                            ? "text-[#0e9f4f]"
+                            : "text-[#374151]")
                       }
                     >
-                      {b.label}
-                    </button>
-                  ))}
-                  <input type="date" value={from} onChange={(e) => { setPreset("custom"); setFrom(e.target.value); }} className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs" />
-                  <input type="date" value={to} onChange={(e) => { setPreset("custom"); setTo(e.target.value); }} className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs" />
+                      {fmt(supplierOstatok)}
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
-                <table className="w-full text-xs tabular-nums">
-                  <thead className="bg-white text-[#6b7280]">
-                    <tr>
-                      <th className="px-2 py-1.5 text-left font-medium">Дата</th>
-                      {!selected && <th className="px-2 py-1.5 text-left font-medium">Поставщик</th>}
-                      <th className="px-2 py-1.5 text-right font-medium">Приход</th>
-                      <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
-                      <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
-                      <th className="px-1 py-1.5"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selected
-                      ? (history ?? []).map((h) => (
-                          <tr key={h.id} className="border-t border-[#e5e7eb]">
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
-                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(h.prihod)} kind="prihod" /></td>
-                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(h.rashod)} kind="rashod" /></td>
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
-                            <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(h.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
-                            </td>
-                          </tr>
-                        ))
-                      : entries.map((e) => (
-                          <tr key={e.id} className="border-t border-[#e5e7eb]">
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
-                            <td className="px-2 py-1.5 text-left">
-                              <button type="button" onClick={() => selectSupplier(e.supplier)} className="hover:text-[#27ae60]">
-                                {e.supplier}
-                              </button>
-                            </td>
-                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(e.prihod)} kind="prihod" /></td>
-                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(e.rashod)} kind="rashod" /></td>
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
-                            <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(e.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
-                            </td>
-                          </tr>
-                        ))}
-                    {((selected && history !== null && history.length === 0) ||
-                      (!selected && entries.length === 0)) && (
+                {/* Фильтр периода истории */}
+                <div className="mb-2 flex flex-wrap items-end gap-2">
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] text-[#9ca3af]">история с</span>
+                    <input
+                      type="date"
+                      value={histFrom}
+                      onChange={(e) => setHistFrom(e.target.value)}
+                      className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] text-[#9ca3af]">по</span>
+                    <input
+                      type="date"
+                      value={histTo}
+                      onChange={(e) => setHistTo(e.target.value)}
+                      className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs"
+                    />
+                  </label>
+                  {(histFrom || histTo) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistFrom("");
+                        setHistTo("");
+                      }}
+                      className="pb-1.5 text-[11px] text-[#2f80ed] underline"
+                    >
+                      сбросить
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="ml-auto pb-1.5 text-[11px] text-[#6b7280] underline"
+                  >
+                    закрыть
+                  </button>
+                </div>
+
+                <div className="mt-1 overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                  <table className="w-full text-xs tabular-nums">
+                    <thead className="bg-white text-[#6b7280]">
                       <tr>
-                        <td colSpan={selected ? 5 : 6} className="px-2 py-3 text-center text-[#9ca3af]">
-                          Нет записей
-                        </td>
+                        <th className="px-2 py-1.5 text-left font-medium">Дата</th>
+                        <th className="px-2 py-1.5 text-right font-medium">Приход</th>
+                        <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
+                        <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
+                        <th className="px-1 py-1.5"></th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {shownHistory.map((h) => {
+                        const editing = editId === h.id;
+                        return (
+                          <tr
+                            key={h.id}
+                            onClick={() => !editing && startEdit(h)}
+                            className={
+                              "border-t border-[#e5e7eb] " +
+                              (editing ? "bg-[#f8fafc]" : "cursor-pointer hover:bg-[#f9fafb]")
+                            }
+                          >
+                            <td className="px-2 py-1.5 text-left align-top text-[#374151]">{h.date}</td>
+                            {editing ? (
+                              <>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    inputMode="decimal"
+                                    value={editPrihod}
+                                    onChange={(e) => setEditPrihod(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
+                                    className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    inputMode="decimal"
+                                    value={editRashod}
+                                    onChange={(e) => setEditRashod(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
+                                    className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    value={editComment}
+                                    onChange={(e) => setEditComment(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="Комментарий"
+                                    className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      saveEdit();
+                                    }}
+                                    className="font-bold text-[#0e9f4f] hover:opacity-80"
+                                    aria-label="Сохранить"
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditId(null);
+                                    }}
+                                    className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]"
+                                    aria-label="Отмена"
+                                  >
+                                    ✕
+                                  </button>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-2 py-1.5 text-right">
+                                  <AmtBadge v={num(h.prihod)} kind="prihod" />
+                                </td>
+                                <td className="px-2 py-1.5 text-right">
+                                  <AmtBadge v={num(h.rashod)} kind="rashod" />
+                                </td>
+                                <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
+                                <td className="px-1 py-1.5 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEdit(h);
+                                    }}
+                                    className="text-[#b0b6bf] hover:text-[#2f80ed]"
+                                    aria-label="Изменить"
+                                  >
+                                    ✎
+                                  </button>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                      {history !== null && shownHistory.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-2 py-3 text-center text-[#9ca3af]">
+                            {history.length === 0 ? "Записей нет" : "Нет записей за период"}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className={panel + " text-center text-sm text-[#9ca3af]"}>
+                Выберите поставщика справа или внесите операцию
+              </div>
+            )}
           </section>
 
           {/* ПРАВАЯ: постоянный список поставщиков (остаток за всё время) */}
@@ -361,7 +483,7 @@ export default function KonsPage() {
               <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                 Общий остаток (сколько мы должны)
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-[#eb5757]">
+              <div className="text-2xl font-extrabold tabular-nums text-[#e02424]">
                 {fmt(totalOstatok)}
               </div>
             </div>

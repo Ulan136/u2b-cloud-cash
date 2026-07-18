@@ -11,6 +11,15 @@ export const createDebtSchema = z.object({
 });
 export type CreateDebtInput = z.infer<typeof createDebtSchema>;
 
+export const updateDebtSchema = z.object({
+  id: z.number().int(),
+  debtAmount: z.string().optional().default("0"),
+  paymentAmount: z.string().optional().default("0"),
+  comment: z.string().optional().default(""),
+  password: z.string(),
+});
+export type UpdateDebtInput = z.infer<typeof updateDebtSchema>;
+
 export const createClientSchema = z.object({
   name: z.string().trim().min(1, "имя обязательно"),
   phone: z.string().trim().optional().default(""),

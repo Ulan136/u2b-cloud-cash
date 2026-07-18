@@ -78,6 +78,12 @@ export default function DolgiPage() {
   const [histFrom, setHistFrom] = useState("");
   const [histTo, setHistTo] = useState("");
 
+  // редактирование записи истории
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editDebt, setEditDebt] = useState("");
+  const [editPay, setEditPay] = useState("");
+  const [editComment, setEditComment] = useState("");
+
   // форма внесения
   const [debtAmount, setDebtAmount] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -235,10 +241,33 @@ export default function DolgiPage() {
     }
   }
 
-  async function removeEntry(id: number) {
-    if (!window.confirm("Удалить запись?")) return;
-    const res = await fetch(`/api/dolgi?id=${id}`, { method: "DELETE" });
-    if (res.ok && selected) await Promise.all([loadAnalysis(), loadHistory(selected.id)]);
+  function startEdit(h: HistoryRow) {
+    setEditId(h.id);
+    setEditDebt(num(h.debtAmount) ? String(num(h.debtAmount)) : "");
+    setEditPay(num(h.paymentAmount) ? String(num(h.paymentAmount)) : "");
+    setEditComment(h.comment ?? "");
+  }
+
+  async function saveEdit() {
+    if (editId == null) return;
+    const password = window.prompt("Пароль для изменения записи:");
+    if (password === null) return; // отмена ввода пароля
+    const res = await fetch("/api/dolgi", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editId,
+        debtAmount: editDebt,
+        paymentAmount: editPay,
+        comment: editComment,
+        password,
+      }),
+    });
+    if (res.status === 403) return setStatus("Неверный пароль — изменение не применено");
+    if (!res.ok) return setStatus("Ошибка изменения");
+    setEditId(null);
+    setStatus("Изменено ✓");
+    if (selected) await Promise.all([loadAnalysis(), loadHistory(selected.id)]);
   }
 
   function toggleSort(k: SortKey) {
@@ -500,42 +529,115 @@ export default function DolgiPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {shownHistory.map((h) => (
-                        <tr key={h.id} className="border-t border-[#e5e7eb]">
-                          <td className="px-2 py-1.5 text-left">
-                            <div className="text-[#374151]">{h.date}</div>
-                            {h.returnDate && (
-                              <div
-                                className={
-                                  "text-[10px] " +
-                                  (h.returnDate < today ? "text-[#e02424]" : "text-[#9ca3af]")
-                                }
-                              >
-                                возврат {h.returnDate}
-                              </div>
+                      {shownHistory.map((h) => {
+                        const editing = editId === h.id;
+                        return (
+                          <tr
+                            key={h.id}
+                            onClick={() => !editing && startEdit(h)}
+                            className={
+                              "border-t border-[#e5e7eb] " +
+                              (editing ? "bg-[#f8fafc]" : "cursor-pointer hover:bg-[#f9fafb]")
+                            }
+                          >
+                            <td className="px-2 py-1.5 text-left align-top">
+                              <div className="text-[#374151]">{h.date}</div>
+                              {h.returnDate && (
+                                <div
+                                  className={
+                                    "text-[10px] " +
+                                    (h.returnDate < today ? "text-[#e02424]" : "text-[#9ca3af]")
+                                  }
+                                >
+                                  возврат {h.returnDate}
+                                </div>
+                              )}
+                            </td>
+                            {editing ? (
+                              <>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    inputMode="decimal"
+                                    value={editDebt}
+                                    onChange={(e) => setEditDebt(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
+                                    className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    inputMode="decimal"
+                                    value={editPay}
+                                    onChange={(e) => setEditPay(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="0"
+                                    className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5">
+                                  <input
+                                    value={editComment}
+                                    onChange={(e) => setEditComment(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="Комментарий"
+                                    className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1"
+                                  />
+                                </td>
+                                <td className="px-1 py-1.5 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      saveEdit();
+                                    }}
+                                    className="font-bold text-[#0e9f4f] hover:opacity-80"
+                                    aria-label="Сохранить"
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditId(null);
+                                    }}
+                                    className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]"
+                                    aria-label="Отмена"
+                                  >
+                                    ✕
+                                  </button>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-2 py-1.5 text-right">
+                                  <AmtBadge v={num(h.debtAmount)} kind="debt" />
+                                </td>
+                                <td className="px-2 py-1.5 text-right">
+                                  <AmtBadge v={num(h.paymentAmount)} kind="pay" />
+                                </td>
+                                <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                                  {h.comment}
+                                </td>
+                                <td className="px-1 py-1.5 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEdit(h);
+                                    }}
+                                    className="text-[#b0b6bf] hover:text-[#2f80ed]"
+                                    aria-label="Изменить"
+                                  >
+                                    ✎
+                                  </button>
+                                </td>
+                              </>
                             )}
-                          </td>
-                          <td className="px-2 py-1.5 text-right">
-                            <AmtBadge v={num(h.debtAmount)} kind="debt" />
-                          </td>
-                          <td className="px-2 py-1.5 text-right">
-                            <AmtBadge v={num(h.paymentAmount)} kind="pay" />
-                          </td>
-                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
-                            {h.comment}
-                          </td>
-                          <td className="px-1 py-1.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => removeEntry(h.id)}
-                              className="text-[#b0b6bf] hover:text-[#eb5757]"
-                              aria-label="Удалить"
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                          </tr>
+                        );
+                      })}
                       {history !== null && shownHistory.length === 0 && (
                         <tr>
                           <td colSpan={5} className="px-2 py-3 text-center text-[#9ca3af]">

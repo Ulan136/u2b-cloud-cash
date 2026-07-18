@@ -75,6 +75,10 @@ export function create(values: DebtValues) {
   return db.insert(debts).values(values).returning();
 }
 
+export function updateById(id: number, values: Partial<DebtValues>) {
+  return db.update(debts).set(values).where(eq(debts.id, id)).returning();
+}
+
 export function deleteById(id: number) {
   return db.delete(debts).where(eq(debts.id, id));
 }

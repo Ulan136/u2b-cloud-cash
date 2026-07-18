@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DATE_RE } from "@/lib/validation";
-import { createDebtSchema } from "@/dto/dolgi.dto";
+import { createDebtSchema, updateDebtSchema } from "@/dto/dolgi.dto";
+import { checkEditPassword } from "@/lib/editAuth";
 import * as dolgiService from "@/services/dolgi.service";
 
 export async function GET(req: NextRequest) {
@@ -33,6 +34,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   return NextResponse.json(await dolgiService.createEntry(parsed.data));
+}
+
+export async function PATCH(req: NextRequest) {
+  const parsed = updateDebtSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  if (!checkEditPassword(parsed.data.password)) {
+    return NextResponse.json({ error: "Неверный пароль" }, { status: 403 });
+  }
+  return NextResponse.json(await dolgiService.updateEntry(parsed.data));
 }
 
 export async function DELETE(req: NextRequest) {

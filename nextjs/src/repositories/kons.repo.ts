@@ -62,6 +62,10 @@ export function create(values: KonsValues) {
   return db.insert(kons).values(values).returning();
 }
 
+export function updateById(id: number, values: Partial<KonsValues>) {
+  return db.update(kons).set(values).where(eq(kons.id, id)).returning();
+}
+
 export function deleteById(id: number) {
   return db.delete(kons).where(eq(kons.id, id));
 }

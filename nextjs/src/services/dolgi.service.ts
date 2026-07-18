@@ -1,6 +1,6 @@
 import { money } from "@/lib/money";
 import { DATE_RE } from "@/lib/validation";
-import type { CreateClientInput, CreateDebtInput } from "@/dto/dolgi.dto";
+import type { CreateClientInput, CreateDebtInput, UpdateDebtInput } from "@/dto/dolgi.dto";
 import * as debtsRepo from "@/repositories/debts.repo";
 import * as clientsRepo from "@/repositories/clients.repo";
 
@@ -50,6 +50,17 @@ export async function createEntry(input: CreateDebtInput) {
     returnDate,
   });
   return { entry: created };
+}
+
+// Изменение суммы/комментария записи. Остаток «за всё время» пересчитывается
+// автоматически, т.к. он агрегируется из строк debts при следующей загрузке.
+export async function updateEntry(input: UpdateDebtInput) {
+  const [updated] = await debtsRepo.updateById(input.id, {
+    debtAmount: money(input.debtAmount),
+    paymentAmount: money(input.paymentAmount),
+    comment: input.comment ?? "",
+  });
+  return { entry: updated };
 }
 
 export async function deleteEntry(id: number) {
