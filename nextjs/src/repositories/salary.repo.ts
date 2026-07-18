@@ -71,6 +71,10 @@ export function create(values: SalaryValues) {
   return db.insert(salary).values(values).returning();
 }
 
+export function updateById(id: number, values: Partial<SalaryValues>) {
+  return db.update(salary).set(values).where(eq(salary.id, id)).returning();
+}
+
 export function deleteById(id: number) {
   return db.delete(salary).where(eq(salary.id, id));
 }

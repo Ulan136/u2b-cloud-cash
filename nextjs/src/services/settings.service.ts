@@ -1,4 +1,5 @@
 import { BadRequestError, ConflictError } from "@/lib/errors";
+import { EDIT_PASSWORD_KEY, getEditPassword } from "@/lib/editAuth";
 import type { CreateDirInput, PatchDirInput, ShiftSettingsInput } from "@/dto/settings.dto";
 import * as clientsRepo from "@/repositories/clients.repo";
 import * as employeesRepo from "@/repositories/employees.repo";
@@ -118,6 +119,16 @@ export async function setShiftSettings(input: ShiftSettingsInput) {
   if (input.enabled !== undefined)
     await appSettingsRepo.upsert("shift_auto_enabled", input.enabled ? "1" : "0");
   return getShiftSettings();
+}
+
+// ── БЕЗОПАСНОСТЬ: пароль изменения записей ──
+export async function getSecuritySettings() {
+  return { editPassword: await getEditPassword() };
+}
+
+export async function setEditPassword(password: string) {
+  await appSettingsRepo.upsert(EDIT_PASSWORD_KEY, password);
+  return { ok: true, editPassword: password };
 }
 
 // ── ПОСТАВЩИКИ (счёт по имени в kons, переименование каскадом) ──

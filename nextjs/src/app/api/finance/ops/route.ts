@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOpSchema } from "@/dto/finance.dto";
+import { createOpSchema, updateOpSchema } from "@/dto/finance.dto";
+import { checkEditPassword } from "@/lib/editAuth";
 import * as financeService from "@/services/finance.service";
 
 export async function GET(req: NextRequest) {
@@ -19,6 +20,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   return NextResponse.json(await financeService.createOp(parsed.data));
+}
+
+export async function PATCH(req: NextRequest) {
+  const parsed = updateOpSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  if (!(await checkEditPassword(parsed.data.password))) {
+    return NextResponse.json({ error: "Неверный пароль" }, { status: 403 });
+  }
+  return NextResponse.json(await financeService.updateOp(parsed.data));
 }
 
 export async function DELETE(req: NextRequest) {

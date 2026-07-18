@@ -61,6 +61,11 @@ export default function SalaryPage() {
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedRef = useRef<string | null>(null);
 
+  // редактирование записи выплаты
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editComment, setEditComment] = useState("");
+
   // форма-строка
   const [formEmployee, setFormEmployee] = useState("");
   const [amount, setAmount] = useState("");
@@ -185,13 +190,27 @@ export default function SalaryPage() {
     }
   }
 
-  async function removeEntry(id: number) {
-    if (!window.confirm("Удалить выплату?")) return;
-    const res = await fetch(`/api/salary?id=${id}`, { method: "DELETE" });
-    if (res.ok) {
-      await loadReport();
-      if (selectedRef.current) await loadHistory(selectedRef.current);
-    }
+  function startEdit(row: { id: number; amount: string; comment: string | null }) {
+    setEditId(row.id);
+    setEditAmount(num(row.amount) ? String(num(row.amount)) : "");
+    setEditComment(row.comment ?? "");
+  }
+
+  async function saveEdit() {
+    if (editId == null) return;
+    const password = window.prompt("Пароль для изменения записи:");
+    if (password === null) return; // отмена ввода пароля
+    const res = await fetch("/api/salary", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editId, amount: editAmount, comment: editComment, password }),
+    });
+    if (res.status === 403) return setStatus("Неверный пароль — изменение не применено");
+    if (!res.ok) return setStatus("Ошибка изменения");
+    setEditId(null);
+    setStatus("Изменено ✓");
+    await loadReport();
+    if (selectedRef.current) await loadHistory(selectedRef.current);
   }
 
   return (
@@ -328,35 +347,75 @@ export default function SalaryPage() {
                   </thead>
                   <tbody>
                     {selected
-                      ? (history ?? []).map((h) => (
-                          <tr key={h.id} className="border-t border-[#e5e7eb]">
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
-                            <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
-                              {money(selected ?? "", num(h.amount))}
-                            </td>
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
-                            <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(h.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
-                            </td>
-                          </tr>
-                        ))
-                      : entries.map((e) => (
-                          <tr key={e.id} className="border-t border-[#e5e7eb]">
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
-                            <td className="px-2 py-1.5 text-left">
-                              <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#27ae60]">
-                                {e.employee}
-                              </button>
-                            </td>
-                            <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
-                              {money(e.employee, num(e.amount))}
-                            </td>
-                            <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
-                            <td className="px-1 py-1.5 text-right">
-                              <button type="button" onClick={() => removeEntry(e.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
-                            </td>
-                          </tr>
-                        ))}
+                      ? (history ?? []).map((h) => {
+                          const editing = editId === h.id;
+                          return (
+                            <tr key={h.id} className="border-t border-[#e5e7eb]">
+                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
+                              {editing ? (
+                                <>
+                                  <td className="px-1 py-1.5 text-right">
+                                    <input inputMode="decimal" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} placeholder="0" className="w-20 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums" />
+                                  </td>
+                                  <td className="px-1 py-1.5">
+                                    <input value={editComment} onChange={(e) => setEditComment(e.target.value)} placeholder="Комментарий" className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1" />
+                                  </td>
+                                  <td className="px-1 py-1.5 text-right whitespace-nowrap">
+                                    <button type="button" onClick={saveEdit} className="font-bold text-[#0e9f4f] hover:opacity-80" aria-label="Сохранить">✓</button>
+                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]" aria-label="Отмена">✕</button>
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
+                                    {money(selected ?? "", num(h.amount))}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
+                                  <td className="px-1 py-1.5 text-right">
+                                    <button type="button" onClick={() => startEdit(h)} className="text-[#b0b6bf] hover:text-[#2f80ed]" aria-label="Изменить">✎</button>
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })
+                      : entries.map((e) => {
+                          const editing = editId === e.id;
+                          return (
+                            <tr key={e.id} className="border-t border-[#e5e7eb]">
+                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
+                              <td className="px-2 py-1.5 text-left">
+                                <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#27ae60]">
+                                  {e.employee}
+                                </button>
+                              </td>
+                              {editing ? (
+                                <>
+                                  <td className="px-1 py-1.5 text-right">
+                                    <input inputMode="decimal" value={editAmount} onChange={(ev) => setEditAmount(ev.target.value)} placeholder="0" className="w-20 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums" />
+                                  </td>
+                                  <td className="px-1 py-1.5">
+                                    <input value={editComment} onChange={(ev) => setEditComment(ev.target.value)} placeholder="Комментарий" className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1" />
+                                  </td>
+                                  <td className="px-1 py-1.5 text-right whitespace-nowrap">
+                                    <button type="button" onClick={saveEdit} className="font-bold text-[#0e9f4f] hover:opacity-80" aria-label="Сохранить">✓</button>
+                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]" aria-label="Отмена">✕</button>
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
+                                    {money(e.employee, num(e.amount))}
+                                  </td>
+                                  <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
+                                  <td className="px-1 py-1.5 text-right">
+                                    <button type="button" onClick={() => startEdit(e)} className="text-[#b0b6bf] hover:text-[#2f80ed]" aria-label="Изменить">✎</button>
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
                     {((selected && history !== null && history.length === 0) ||
                       (!selected && entries.length === 0)) && (
                       <tr>

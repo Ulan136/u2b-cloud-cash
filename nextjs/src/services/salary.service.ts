@@ -1,6 +1,6 @@
 import { money } from "@/lib/money";
 import { DATE_RE } from "@/lib/validation";
-import type { CreateSalaryInput } from "@/dto/salary.dto";
+import type { CreateSalaryInput, UpdateSalaryInput } from "@/dto/salary.dto";
 import * as salaryRepo from "@/repositories/salary.repo";
 
 export async function getReport(from: string, to: string, date: string | null) {
@@ -36,6 +36,14 @@ export async function createEntry(input: CreateSalaryInput) {
   const [entry] = await salaryRepo.create({
     date: input.date,
     employee: input.employee,
+    amount: money(input.amount),
+    comment: input.comment ?? "",
+  });
+  return { entry };
+}
+
+export async function updateEntry(input: UpdateSalaryInput) {
+  const [entry] = await salaryRepo.updateById(input.id, {
     amount: money(input.amount),
     comment: input.comment ?? "",
   });

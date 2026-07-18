@@ -23,6 +23,11 @@ export const shiftSettingsSchema = z.object({
 });
 export type ShiftSettingsInput = z.infer<typeof shiftSettingsSchema>;
 
+export const securitySettingsSchema = z.object({
+  editPassword: z.string().trim().min(1, "пароль обязателен"),
+});
+export type SecuritySettingsInput = z.infer<typeof securitySettingsSchema>;
+
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "название обязательно"),
   icon: z.string().optional().default(""),

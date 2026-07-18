@@ -78,6 +78,10 @@ export function createOp(values: OpValues) {
   return db.insert(finOps).values(values).returning();
 }
 
+export function updateOp(id: number, values: Partial<OpValues>) {
+  return db.update(finOps).set(values).where(eq(finOps.id, id)).returning();
+}
+
 export function deleteOp(id: number) {
   return db.delete(finOps).where(eq(finOps.id, id));
 }

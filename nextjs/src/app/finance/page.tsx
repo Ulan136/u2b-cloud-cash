@@ -504,35 +504,96 @@ function OpTab({
   );
 }
 
-function OpRow({ op, onDelete }: { op: Op; onDelete?: (id: number) => void }) {
+function OpRow({
+  op,
+  onSave,
+}: {
+  op: Op;
+  onSave?: (id: number, amount: number, comment: string) => Promise<boolean>;
+}) {
   const isTrf = op.type === "Перевод";
   const color = isTrf ? "text-sky-400" : op.type === "Приход" ? "text-[#27ae60]" : "text-[#eb5757]";
   const sign = isTrf ? "" : op.type === "Приход" ? "+" : "−";
+
+  const [editing, setEditing] = useState(false);
+  const [amt, setAmt] = useState("");
+  const [cm, setCm] = useState("");
+
+  function start() {
+    setAmt(String(op.amount));
+    setCm(op.comment ?? "");
+    setEditing(true);
+  }
+  async function commit() {
+    const n = Number(amt);
+    if (!onSave || !Number.isFinite(n) || n <= 0) return;
+    const ok = await onSave(op.id, n, cm);
+    if (ok) setEditing(false);
+  }
+
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[#e5e7eb] bg-white p-3">
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold">
           {isTrf ? `${op.accountName} → ${op.toAccountName}` : op.name || "—"}
         </div>
-        <div className="text-[11px] text-[#9ca3af]">
-          {op.date} · {isTrf ? "Перевод" : op.accountName}
-          {op.comment ? ` · ${op.comment}` : ""}
+        {editing ? (
+          <input
+            value={cm}
+            onChange={(e) => setCm(e.target.value)}
+            placeholder="Комментарий"
+            className="mt-1 w-full rounded border border-[#e5e7eb] px-2 py-1 text-xs"
+          />
+        ) : (
+          <div className="text-[11px] text-[#9ca3af]">
+            {op.date} · {isTrf ? "Перевод" : op.accountName}
+            {op.comment ? ` · ${op.comment}` : ""}
+          </div>
+        )}
+      </div>
+      {editing ? (
+        <input
+          inputMode="decimal"
+          value={amt}
+          onChange={(e) => setAmt(e.target.value)}
+          className="w-24 shrink-0 rounded border border-[#e5e7eb] px-2 py-1 text-right text-sm tabular-nums"
+        />
+      ) : (
+        <div className={"shrink-0 text-sm font-bold tabular-nums " + color}>
+          {sign}
+          <Amt>{fmtNum(op.amount)}</Amt>
         </div>
-      </div>
-      <div className={"shrink-0 text-sm font-bold tabular-nums " + color}>
-        {sign}
-        <Amt>{fmtNum(op.amount)}</Amt>
-      </div>
-      {onDelete && (
-        <button
-          type="button"
-          onClick={() => onDelete(op.id)}
-          className="shrink-0 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-[#eb5757]"
-          aria-label="Удалить"
-        >
-          ✕
-        </button>
       )}
+      {onSave &&
+        (editing ? (
+          <div className="flex shrink-0 gap-1">
+            <button
+              type="button"
+              onClick={commit}
+              className="rounded-lg border border-[#bfe6cf] bg-[#e7f6ee] px-2 py-1 font-bold text-[#0e9f4f]"
+              aria-label="Сохранить"
+            >
+              ✓
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-lg border border-[#e5e7eb] bg-[#f3f4f6] px-2 py-1 text-[#9ca3af]"
+              aria-label="Отмена"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={start}
+            className="shrink-0 rounded-lg border border-[#e5e7eb] bg-[#f3f4f6] px-2 py-1 text-[#2f80ed]"
+            aria-label="Изменить"
+          >
+            ✎
+          </button>
+        ))}
     </div>
   );
 }
@@ -835,12 +896,26 @@ function HistTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function del(id: number) {
-    if (!window.confirm("Удалить операцию?")) return;
-    await fetch(`/api/finance/ops?id=${id}`, { method: "DELETE" });
-    flash("Удалено");
+  async function saveOp(id: number, amount: number, comment: string): Promise<boolean> {
+    const password = window.prompt("Пароль для изменения записи:");
+    if (password === null) return false; // отмена ввода пароля
+    const res = await fetch("/api/finance/ops", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, amount, comment, password }),
+    });
+    if (res.status === 403) {
+      flash("Неверный пароль — изменение не применено");
+      return false;
+    }
+    if (!res.ok) {
+      flash("Ошибка изменения");
+      return false;
+    }
+    flash("Изменено");
     await onChanged();
     apply();
+    return true;
   }
 
   return (
@@ -869,7 +944,7 @@ function HistTab({
       <div className="mb-2 text-[11px] text-[#9ca3af]">{ops.length} записей</div>
       <div className="space-y-2">
         {ops.map((o) => (
-          <OpRow key={o.id} op={o} onDelete={del} />
+          <OpRow key={o.id} op={o} onSave={saveOp} />
         ))}
         {ops.length === 0 && <p className="py-4 text-center text-sm text-[#9ca3af]">Нет операций</p>}
       </div>

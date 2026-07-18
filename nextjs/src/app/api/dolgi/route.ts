@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  if (!checkEditPassword(parsed.data.password)) {
+  if (!(await checkEditPassword(parsed.data.password))) {
     return NextResponse.json({ error: "Неверный пароль" }, { status: 403 });
   }
   return NextResponse.json(await dolgiService.updateEntry(parsed.data));

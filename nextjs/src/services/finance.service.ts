@@ -6,6 +6,7 @@ import type {
   CreateFavInput,
   CreateOpInput,
   PatchAccountInput,
+  UpdateOpInput,
 } from "@/dto/finance.dto";
 import * as finRepo from "@/repositories/finance.repo";
 
@@ -160,6 +161,16 @@ export async function createOp(input: CreateOpInput) {
     toAccountId: input.type === "Перевод" ? input.toAccountId ?? null : null,
   });
   return { op: created };
+}
+
+// Изменение суммы/комментария операции. Баланс счёта пересчитывается автоматически
+// (агрегируется из fin_ops при следующей загрузке).
+export async function updateOp(input: UpdateOpInput) {
+  const [updated] = await finRepo.updateOp(input.id, {
+    amount: String(Math.round(input.amount * 100) / 100),
+    comment: input.comment || null,
+  });
+  return { op: updated };
 }
 
 export async function deleteOp(id: number) {

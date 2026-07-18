@@ -15,7 +15,8 @@ type DirRow = {
 type TabDef =
   | { k: string; label: string; kind: "dir"; endpoint: string; nameLabel: string; withHidden?: boolean }
   | { k: string; label: string; kind: "accounts" }
-  | { k: string; label: string; kind: "shift" };
+  | { k: string; label: string; kind: "shift" }
+  | { k: string; label: string; kind: "security" };
 
 const TABS: TabDef[] = [
   { k: "clients", label: "Клиенты", kind: "dir", endpoint: "/api/settings/clients", nameLabel: "Клиент" },
@@ -23,6 +24,7 @@ const TABS: TabDef[] = [
   { k: "suppliers", label: "Фирмы", kind: "dir", endpoint: "/api/settings/suppliers", nameLabel: "Поставщик" },
   { k: "accounts", label: "Счета", kind: "accounts" },
   { k: "shift", label: "Смена", kind: "shift" },
+  { k: "security", label: "Безопасность", kind: "security" },
 ];
 
 const input = "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
@@ -68,6 +70,7 @@ export default function SettingsPage() {
         )}
         {active.kind === "accounts" && <AccountsTab />}
         {active.kind === "shift" && <ShiftTab />}
+        {active.kind === "security" && <SecurityTab />}
       </div>
     </main>
   );
@@ -475,6 +478,78 @@ function ShiftTab() {
           </select>
         </div>
       </label>
+
+      {status && <p className="text-xs text-[#27ae60]">{status}</p>}
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const [password, setPassword] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/settings/security");
+    const d = await res.json();
+    setPassword(d.editPassword ?? "");
+    setLoaded(true);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function save() {
+    const value = password.trim();
+    if (!value) return setStatus("Пароль не может быть пустым");
+    setSaving(true);
+    setStatus("");
+    try {
+      const res = await fetch("/api/settings/security", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ editPassword: value }),
+      });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      setPassword(d.editPassword ?? value);
+      setStatus("Сохранено ✓");
+    } catch {
+      setStatus("Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={card + " max-w-md space-y-4"}>
+      <div className="text-sm font-semibold text-[#1f2933]">Пароль изменения записей</div>
+      <p className="text-xs text-[#6b7280]">
+        Этот пароль запрашивается при изменении сумм в журналах (Долги, КОНС, Зарплата,
+        Финансы). Удаление записей отключено — только правка с паролем.
+      </p>
+
+      <label className="block">
+        <span className="mb-1 block text-xs text-[#6b7280]">Пароль</span>
+        <input
+          value={loaded ? password : ""}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder={loaded ? "" : "загрузка…"}
+          inputMode="text"
+          autoComplete="off"
+          className={input}
+        />
+      </label>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving || !loaded}
+        className="rounded-lg bg-[#2f80ed] px-5 py-2 text-sm font-bold text-white disabled:opacity-50 active:bg-[#2568c9]"
+      >
+        {saving ? "…" : "Сохранить"}
+      </button>
 
       {status && <p className="text-xs text-[#27ae60]">{status}</p>}
     </div>

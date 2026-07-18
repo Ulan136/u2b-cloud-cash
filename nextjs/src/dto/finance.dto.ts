@@ -37,6 +37,14 @@ export const createOpSchema = z
   );
 export type CreateOpInput = z.infer<typeof createOpSchema>;
 
+export const updateOpSchema = z.object({
+  id: z.number().int(),
+  amount: z.number().positive("сумма должна быть больше нуля"),
+  comment: z.string().optional().default(""),
+  password: z.string(),
+});
+export type UpdateOpInput = z.infer<typeof updateOpSchema>;
+
 export const createFavSchema = z.object({
   name: z.string().trim().min(1, "название обязательно"),
   accountId: z.number().int(),
