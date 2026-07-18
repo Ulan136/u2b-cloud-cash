@@ -257,7 +257,11 @@ export default function KonsPage() {
                   <DirectorySelect
                     items={dirSuppliers}
                     value={formSupplier}
-                    onPick={(it) => setFormSupplier(it.name)}
+                    onPick={(it) => selectSupplier(it.name)}
+                    onClear={(q) => {
+                      clearSelection();
+                      if (!q.trim()) setFormSupplier("");
+                    }}
                     onCreate={createSupplier}
                     placeholder="Выберите или создайте"
                   />

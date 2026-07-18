@@ -11,6 +11,7 @@ export function DirectorySelect({
   value,
   onPick,
   onCreate,
+  onClear,
   placeholder,
   className,
 }: {
@@ -18,6 +19,9 @@ export function DirectorySelect({
   value: string;
   onPick: (item: DirItem) => void;
   onCreate: (name: string, phone: string) => Promise<DirItem | null>;
+  // Вызывается, когда текст поля не совпадает ни с одним элементом (правка/очистка).
+  // Аргумент — текущий текст поля ("" при полной очистке).
+  onClear?: (query: string) => void;
   placeholder?: string;
   className?: string;
 }) {
@@ -77,11 +81,26 @@ export function DirectorySelect({
           // точное совпадение имени — сразу выбираем (иначе значение не меняется)
           const exact = items.find((i) => i.name.toLowerCase() === v.trim().toLowerCase());
           if (exact) onPick(exact);
+          else onClear?.(v);
         }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className={inputCls}
+        className={inputCls + (query && onClear ? " pr-8" : "")}
       />
+      {query && onClear && (
+        <button
+          type="button"
+          onClick={() => {
+            setQuery("");
+            setOpen(false);
+            onClear("");
+          }}
+          aria-label="Очистить"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#eb5757]"
+        >
+          ✕
+        </button>
+      )}
       {open && (
         <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-[#e5e7eb] bg-white shadow-xl">
           {filtered.map((i) => (
