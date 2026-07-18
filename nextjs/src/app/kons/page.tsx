@@ -44,6 +44,25 @@ const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
+/** Сумма-бейдж: приход — красный «+» (наш долг вырос), оплата — зелёный «−». Пустая при нуле. */
+function AmtBadge({ v, kind }: { v: number; kind: "prihod" | "rashod" }) {
+  if (!v) return null;
+  const prihod = kind === "prihod";
+  return (
+    <span
+      className="inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums"
+      style={
+        prihod
+          ? { background: "#fdecec", color: "#e02424" }
+          : { background: "#e7f6ee", color: "#0e9f4f" }
+      }
+    >
+      {prihod ? "+" : "−"}
+      {fmt(v)}
+    </span>
+  );
+}
+
 export default function KonsPage() {
   const today = useMemo(() => todayStr(), []);
 
@@ -298,8 +317,8 @@ export default function KonsPage() {
                       ? (history ?? []).map((h) => (
                           <tr key={h.id} className="border-t border-[#e5e7eb]">
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
-                            <td className="px-2 py-1.5 text-right text-[#eb5757]">{num(h.prihod) ? fmt(num(h.prihod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-right text-[#27ae60]">{num(h.rashod) ? fmt(num(h.rashod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(h.prihod)} kind="prihod" /></td>
+                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(h.rashod)} kind="rashod" /></td>
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
                             <td className="px-1 py-1.5 text-right">
                               <button type="button" onClick={() => removeEntry(h.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
@@ -314,8 +333,8 @@ export default function KonsPage() {
                                 {e.supplier}
                               </button>
                             </td>
-                            <td className="px-2 py-1.5 text-right text-[#eb5757]">{num(e.prihod) ? fmt(num(e.prihod)) : ""}</td>
-                            <td className="px-2 py-1.5 text-right text-[#27ae60]">{num(e.rashod) ? fmt(num(e.rashod)) : ""}</td>
+                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(e.prihod)} kind="prihod" /></td>
+                            <td className="px-2 py-1.5 text-right"><AmtBadge v={num(e.rashod)} kind="rashod" /></td>
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
                             <td className="px-1 py-1.5 text-right">
                               <button type="button" onClick={() => removeEntry(e.id)} className="text-[#b0b6bf] hover:text-[#eb5757]">✕</button>
@@ -375,12 +394,12 @@ export default function KonsPage() {
                       }
                     >
                       <td className="px-3 py-2 text-left">{b.supplier}</td>
-                      <td className="px-2 py-2 text-right text-[#6b7280]">{fmt(b.prihod)}</td>
-                      <td className="px-2 py-2 text-right text-[#6b7280]">{fmt(b.rashod)}</td>
+                      <td className="px-2 py-2 text-right"><AmtBadge v={b.prihod} kind="prihod" /></td>
+                      <td className="px-2 py-2 text-right"><AmtBadge v={b.rashod} kind="rashod" /></td>
                       <td
                         className={
                           "px-3 py-2 text-right font-semibold " +
-                          (b.ostatok > 0 ? "text-[#eb5757]" : b.ostatok < 0 ? "text-[#27ae60]" : "text-[#374151]")
+                          (b.ostatok > 0 ? "text-[#e02424]" : b.ostatok < 0 ? "text-[#0e9f4f]" : "text-[#374151]")
                         }
                       >
                         {fmt(b.ostatok)}

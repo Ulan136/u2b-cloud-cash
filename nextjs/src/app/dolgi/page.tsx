@@ -38,11 +38,30 @@ const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
+/** Сумма-бейдж: долг — красный «+», оплата — зелёный «−». Пустая при нуле. */
+function AmtBadge({ v, kind }: { v: number; kind: "debt" | "pay" }) {
+  if (!v) return null;
+  const debt = kind === "debt";
+  return (
+    <span
+      className="inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums"
+      style={
+        debt
+          ? { background: "#fdecec", color: "#e02424" }
+          : { background: "#e7f6ee", color: "#0e9f4f" }
+      }
+    >
+      {debt ? "+" : "−"}
+      {fmt(v)}
+    </span>
+  );
+}
+
 export default function DolgiPage() {
   const today = useMemo(() => todayStr(), []);
   const [clients, setClients] = useState<Client[]>([]);
 
-  // левая панель
+  // левая панель — выбранный клиент
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedIdRef = useRef<number | null>(null);
@@ -54,6 +73,10 @@ export default function DolgiPage() {
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+
+  // фильтр периода истории (по умолчанию — вся история)
+  const [histFrom, setHistFrom] = useState("");
+  const [histTo, setHistTo] = useState("");
 
   // форма внесения
   const [debtAmount, setDebtAmount] = useState("");
@@ -126,10 +149,19 @@ export default function DolgiPage() {
     [clients, selected]
   );
 
+  // Остаток — всегда за всё время (по полной истории), фильтр периода на него не влияет.
   const clientOstatok = useMemo(() => {
     if (!history) return 0;
     return history.reduce((s, h) => s + num(h.debtAmount) - num(h.paymentAmount), 0);
   }, [history]);
+
+  // История с учётом фильтра периода (для отображения).
+  const shownHistory = useMemo(() => {
+    if (!history) return [];
+    return history.filter(
+      (h) => (!histFrom || h.date >= histFrom) && (!histTo || h.date <= histTo)
+    );
+  }, [history, histFrom, histTo]);
 
   function selectClient(c: { id: number; name: string }) {
     selectedIdRef.current = c.id;
@@ -138,6 +170,20 @@ export default function DolgiPage() {
     setMenuOpen(false);
     setHistory(null);
     loadHistory(c.id);
+  }
+
+  /** Сброс выбранного клиента: карточка и история скрываются. */
+  function clearSelection() {
+    selectedIdRef.current = null;
+    setSelected(null);
+    setHistory(null);
+  }
+
+  /** Полная очистка поля клиента (нажали ✕). */
+  function clearClient() {
+    clearSelection();
+    setClientQuery("");
+    setMenuOpen(false);
   }
 
   async function createClient() {
@@ -231,23 +277,43 @@ export default function DolgiPage() {
         </header>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* ЛЕВАЯ ПАНЕЛЬ — клиент */}
+          {/* ЛЕВАЯ ПАНЕЛЬ — форма (первой) + карточка клиента */}
           <section className="space-y-4">
-            {/* Выбор клиента */}
+            {/* Форма внесения — самое частое действие */}
             <div className={panel}>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                Внести {selected ? `— ${selected.name}` : ""}
+              </div>
+
+              {/* Клиент: автопоиск + «+ новый» прямо в форме */}
               <div ref={comboRef} className="relative">
                 <span className="mb-1 block text-xs text-[#6b7280]">Клиент</span>
                 <div className="flex gap-2">
-                  <input
-                    value={clientQuery}
-                    onChange={(e) => {
-                      setClientQuery(e.target.value);
-                      setMenuOpen(true);
-                    }}
-                    onFocus={() => setMenuOpen(true)}
-                    placeholder="Поиск по имени…"
-                    className={input + " flex-1"}
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      value={clientQuery}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setClientQuery(v);
+                        setMenuOpen(true);
+                        // стёрли/изменили имя — старая карточка и история скрываются
+                        if (selected && v !== selected.name) clearSelection();
+                      }}
+                      onFocus={() => setMenuOpen(true)}
+                      placeholder="Поиск по имени…"
+                      className={input + " pr-8"}
+                    />
+                    {clientQuery && (
+                      <button
+                        type="button"
+                        onClick={clearClient}
+                        aria-label="Очистить"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#eb5757]"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowNew((v) => !v)}
@@ -300,106 +366,9 @@ export default function DolgiPage() {
                   </button>
                 </div>
               )}
-            </div>
 
-            {/* Карточка клиента */}
-            {selected ? (
-              <div className={panel}>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <div>
-                    <div className="text-lg font-bold">{selected.name}</div>
-                    {selectedPhone && (
-                      <div className="text-xs text-[#9ca3af]">{selectedPhone}</div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase text-[#6b7280]">Остаток</div>
-                    <div
-                      className={
-                        "text-2xl font-extrabold tabular-nums " +
-                        (clientOstatok > 0
-                          ? "text-[#eb5757]"
-                          : clientOstatok < 0
-                            ? "text-[#27ae60]"
-                            : "text-[#374151]")
-                      }
-                    >
-                      {fmt(clientOstatok)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-2 overflow-x-auto rounded-lg border border-[#e5e7eb]">
-                  <table className="w-full text-xs tabular-nums">
-                    <thead className="bg-white text-[#6b7280]">
-                      <tr>
-                        <th className="px-2 py-1.5 text-left font-medium">Дата</th>
-                        <th className="px-2 py-1.5 text-right font-medium">Долг</th>
-                        <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
-                        <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
-                        <th className="px-1 py-1.5"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(history ?? []).map((h) => (
-                        <tr key={h.id} className="border-t border-[#e5e7eb]">
-                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
-                            {h.date}
-                            {h.returnDate && (
-                              <span
-                                className={
-                                  "ml-1 " +
-                                  (h.returnDate < today ? "text-[#eb5757]" : "text-[#9ca3af]")
-                                }
-                              >
-                                (↩{h.returnDate})
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-2 py-1.5 text-right text-[#eb5757]">
-                            {num(h.debtAmount) ? fmt(num(h.debtAmount)) : ""}
-                          </td>
-                          <td className="px-2 py-1.5 text-right text-[#27ae60]">
-                            {num(h.paymentAmount) ? fmt(num(h.paymentAmount)) : ""}
-                          </td>
-                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
-                            {h.comment}
-                          </td>
-                          <td className="px-1 py-1.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => removeEntry(h.id)}
-                              className="text-[#b0b6bf] hover:text-[#eb5757]"
-                              aria-label="Удалить"
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {history !== null && history.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="px-2 py-3 text-center text-[#9ca3af]">
-                            Записей нет
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className={panel + " text-center text-sm text-[#9ca3af]"}>
-                Выберите клиента слева или справа в таблице
-              </div>
-            )}
-
-            {/* Форма внесения */}
-            <div className={panel}>
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                Внести {selected ? `— ${selected.name}` : ""}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+              {/* Суммы */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="mb-1 block text-xs text-[#6b7280]">Долг (взял)</span>
                   <input
@@ -457,6 +426,132 @@ export default function DolgiPage() {
               </button>
               {status && <p className="mt-2 text-center text-xs text-[#374151]">{status}</p>}
             </div>
+
+            {/* Карточка выбранного клиента (остаток + история) */}
+            {selected ? (
+              <div className={panel}>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <div>
+                    <div className="text-lg font-bold">{selected.name}</div>
+                    {selectedPhone && (
+                      <div className="text-xs text-[#9ca3af]">{selectedPhone}</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase text-[#6b7280]">Остаток (за всё время)</div>
+                    <div
+                      className={
+                        "text-2xl font-extrabold tabular-nums " +
+                        (clientOstatok > 0
+                          ? "text-[#e02424]"
+                          : clientOstatok < 0
+                            ? "text-[#0e9f4f]"
+                            : "text-[#374151]")
+                      }
+                    >
+                      {fmt(clientOstatok)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Фильтр периода истории */}
+                <div className="mb-2 flex flex-wrap items-end gap-2">
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] text-[#9ca3af]">история с</span>
+                    <input
+                      type="date"
+                      value={histFrom}
+                      onChange={(e) => setHistFrom(e.target.value)}
+                      className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] text-[#9ca3af]">по</span>
+                    <input
+                      type="date"
+                      value={histTo}
+                      onChange={(e) => setHistTo(e.target.value)}
+                      className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs"
+                    />
+                  </label>
+                  {(histFrom || histTo) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistFrom("");
+                        setHistTo("");
+                      }}
+                      className="pb-1.5 text-[11px] text-[#2f80ed] underline"
+                    >
+                      сбросить
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-1 overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                  <table className="w-full text-xs tabular-nums">
+                    <thead className="bg-white text-[#6b7280]">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left font-medium">Дата</th>
+                        <th className="px-2 py-1.5 text-right font-medium">Долг</th>
+                        <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
+                        <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
+                        <th className="px-1 py-1.5"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shownHistory.map((h) => (
+                        <tr key={h.id} className="border-t border-[#e5e7eb]">
+                          <td className="px-2 py-1.5 text-left">
+                            <div className="text-[#374151]">{h.date}</div>
+                            {h.returnDate && (
+                              <div
+                                className={
+                                  "text-[10px] " +
+                                  (h.returnDate < today ? "text-[#e02424]" : "text-[#9ca3af]")
+                                }
+                              >
+                                возврат {h.returnDate}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            <AmtBadge v={num(h.debtAmount)} kind="debt" />
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            <AmtBadge v={num(h.paymentAmount)} kind="pay" />
+                          </td>
+                          <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                            {h.comment}
+                          </td>
+                          <td className="px-1 py-1.5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => removeEntry(h.id)}
+                              className="text-[#b0b6bf] hover:text-[#eb5757]"
+                              aria-label="Удалить"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {history !== null && shownHistory.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-2 py-3 text-center text-[#9ca3af]">
+                            {history.length === 0 ? "Записей нет" : "Нет записей за период"}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className={panel + " text-center text-sm text-[#9ca3af]"}>
+                Выберите клиента в форме выше или справа в таблице
+              </div>
+            )}
           </section>
 
           {/* ПРАВАЯ ПАНЕЛЬ — анализ */}
@@ -470,7 +565,7 @@ export default function DolgiPage() {
                 Общий остаток (на руках у клиентов)
                 {search || statusFilter !== "all" ? " · по фильтру" : ""}
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-[#eb5757]">
+              <div className="text-2xl font-extrabold tabular-nums text-[#e02424]">
                 {fmt(search || statusFilter !== "all" ? shownTotal : totalOstatok)}
               </div>
             </div>
@@ -551,15 +646,19 @@ export default function DolgiPage() {
                         {b.overdue && <span title="просрочено">🔴 </span>}
                         {b.name}
                       </td>
-                      <td className="px-3 py-2 text-right text-[#6b7280]">{fmt(b.debts)}</td>
-                      <td className="px-3 py-2 text-right text-[#6b7280]">{fmt(b.payments)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <AmtBadge v={b.debts} kind="debt" />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <AmtBadge v={b.payments} kind="pay" />
+                      </td>
                       <td
                         className={
                           "px-3 py-2 text-right font-semibold " +
                           (b.ostatok > 0
-                            ? "text-[#eb5757]"
+                            ? "text-[#e02424]"
                             : b.ostatok < 0
-                              ? "text-[#27ae60]"
+                              ? "text-[#0e9f4f]"
                               : "text-[#374151]")
                         }
                       >
