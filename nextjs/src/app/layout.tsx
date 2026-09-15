@@ -15,8 +15,11 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+// Название магазина из переменной окружения (свой у каждого проекта Vercel).
+const STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME || "U2B Cloud Cash";
+
 export const metadata: Metadata = {
-  title: "U2B Cloud Cash",
+  title: STORE_NAME,
   description: "Учёт кассы",
   manifest: "/manifest.json",
   applicationName: "CloudCash",

@@ -4,6 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// Название магазина задаётся переменной окружения NEXT_PUBLIC_STORE_NAME
+// (свой у каждого проекта Vercel). Так один код обслуживает несколько магазинов.
+const STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME || "U2B Cloud Cash";
+
 const ITEMS = [
   { href: "/", icon: "🏠", label: "Дашборд" },
   { href: "/kassa", icon: "💵", label: "Касса" },
@@ -62,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ₸
           </div>
           {!collapsed && (
-            <span className="truncate text-sm font-extrabold text-[#1f2933]">U2B Cloud Cash</span>
+            <span className="truncate text-sm font-extrabold text-[#1f2933]">{STORE_NAME}</span>
           )}
         </div>
 
