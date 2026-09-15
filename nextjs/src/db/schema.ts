@@ -56,6 +56,9 @@ export const cashDays = pgTable("cash_days", {
   id: serial("id").primaryKey(),
   date: date("date").notNull().unique(),
   klaudObshch: numeric("klaud_obshch").default("0"),
+  // ОБЩ РЕАЛ — зафиксированная «реализация» за день. Если задано (импорт/закрытие),
+  // используется напрямую; иначе считается формулой computeObshchReal.
+  obshchReal: numeric("obshch_real"),
   sebestoimost: numeric("sebestoimost").default("0"),
   nalichnye: numeric("nalichnye").default("0"),
   kaspi: numeric("kaspi").default("0"),

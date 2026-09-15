@@ -44,6 +44,10 @@ export async function saveDay(input: SaveDayInput) {
   const base = {
     date,
     klaudObshch: money(day.klaudObshch),
+    // фиксируем ОБЩ РЕАЛ, если пришёл с клиента (иначе оставляем как есть — null → формула)
+    ...(day.obshchReal != null && day.obshchReal !== ""
+      ? { obshchReal: money(day.obshchReal) }
+      : {}),
     nalichnye: money(day.nalichnye),
     kaspi: money(day.kaspi),
     halyk: money(day.halyk),
@@ -119,17 +123,20 @@ export async function listRecentDays(from: string, to: string) {
     .map((day) => {
       const klaud = num(day.klaudObshch);
       const dd = debtByDate.get(day.date) ?? { debt: 0, payment: 0 };
-      const obshchReal = computeObshchReal({
-        nal: num(day.nalichnye),
-        kas: num(day.kaspi),
-        hal: num(day.halyk),
-        rashod: expByDate.get(day.date) ?? 0,
-        zakup: num(day.zakupTovar),
-        inkas: num(day.inkasNalichka),
-        debt: dd.debt,
-        vozvrat: num(day.vozvrat),
-        vozvratDolg: dd.payment,
-      });
+      const obshchReal =
+        day.obshchReal != null
+          ? num(day.obshchReal)
+          : computeObshchReal({
+              nal: num(day.nalichnye),
+              kas: num(day.kaspi),
+              hal: num(day.halyk),
+              rashod: expByDate.get(day.date) ?? 0,
+              zakup: num(day.zakupTovar),
+              inkas: num(day.inkasNalichka),
+              debt: dd.debt,
+              vozvrat: num(day.vozvrat),
+              vozvratDolg: dd.payment,
+            });
       return { date: day.date, klaud, minPlus: computeMinPlus(obshchReal, klaud) };
     })
     .sort((a, b) => (a.date < b.date ? 1 : -1));

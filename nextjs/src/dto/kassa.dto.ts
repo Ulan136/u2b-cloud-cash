@@ -5,6 +5,7 @@ export const saveDaySchema = z.object({
   date: z.string().regex(DATE_RE),
   day: z.object({
     klaudObshch: z.string(),
+    obshchReal: z.string().optional(),
     nalichnye: z.string(),
     kaspi: z.string(),
     halyk: z.string(),

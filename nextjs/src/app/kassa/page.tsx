@@ -130,6 +130,10 @@ export default function KassaPage() {
   const [closedBy, setClosedBy] = useState<string | null>(null);
   // Авто-расход «ЗАРПЛАТА» = сумма выплат из журнала Зарплаты за выбранный день.
   const [salaryDayTotal, setSalaryDayTotal] = useState(0);
+  // ОБЩ РЕАЛ, зафиксированный в БД для загруженного дня (импорт/прошлое закрытие).
+  // Пока день не редактируют — показываем его; при правках считаем формулой вживую.
+  const [storedObshchReal, setStoredObshchReal] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const archRange = useMemo(() => {
     const t = new Date();
@@ -166,6 +170,10 @@ export default function KassaPage() {
         setClosedBy(data.day?.closedBy ?? null);
 
         if (!background) {
+          setStoredObshchReal(
+            data.day?.obshchReal != null ? Number(data.day.obshchReal) : null
+          );
+          setDirty(false);
           setDay(
             data.day
               ? {
@@ -201,15 +209,23 @@ export default function KassaPage() {
 
   const { refreshing, lastUpdated } = useLiveData("kassa", load, [date]);
 
-  const setField = (key: DayKey | "comment", value: string) =>
+  const setField = (key: DayKey | "comment", value: string) => {
+    setDirty(true);
     setDay((d) => ({ ...d, [key]: value }));
-  const updateExp = (cat: string, patch: Partial<{ amount: string; comment: string }>) =>
+  };
+  const updateExp = (cat: string, patch: Partial<{ amount: string; comment: string }>) => {
+    setDirty(true);
     setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), ...patch } }));
+  };
   // «Карандаш»: свернуть выражение (42000+20000) в его сумму (62000), чтобы дальше добавлять.
-  const collapseField = (key: DayKey) =>
+  const collapseField = (key: DayKey) => {
+    setDirty(true);
     setDay((d) => ({ ...d, [key]: String(evalExpr(d[key])) }));
-  const collapseExp = (cat: string) =>
+  };
+  const collapseExp = (cat: string) => {
+    setDirty(true);
     setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), amount: String(evalExpr(m[cat]?.amount ?? "")) } }));
+  };
 
   const expensesTotal = useMemo(
     () => salaryDayTotal + displayCats.reduce((s, c) => s + evalExpr(exp[c]?.amount ?? ""), 0),
@@ -227,11 +243,14 @@ export default function KassaPage() {
     const debt = num(totals.debt);
     const vozvratDolg = num(totals.payment);
     const rashod = expensesTotal;
-    const obshchReal =
+    const computed =
       nal + kas + hal + (rashod + zakup + inkas + debt + vozvrat) - vozvratDolg;
+    // Пока день не редактируют и есть зафиксированное значение — показываем его.
+    const obshchReal =
+      !dirty && storedObshchReal != null ? storedObshchReal : Math.round(computed * 100) / 100;
     const minPlus = Math.round((obshchReal - klaud) * 100) / 100;
     return { debt, vozvratDolg, rashod, obshchReal, minPlus };
-  }, [day, totals, expensesTotal]);
+  }, [day, totals, expensesTotal, dirty, storedObshchReal]);
 
   async function submit(action: "save" | "close" | "reopen") {
     if (action === "close" && !window.confirm("Закрыть смену? День станет доступен только для просмотра."))
@@ -243,6 +262,7 @@ export default function KassaPage() {
       // Выражения-калькулятор превращаем в числа перед отправкой (в БД — numeric).
       const dayEval = {
         klaudObshch: String(evalExpr(day.klaudObshch)),
+        obshchReal: String(calc.obshchReal),
         nalichnye: String(evalExpr(day.nalichnye)),
         kaspi: String(evalExpr(day.kaspi)),
         halyk: String(evalExpr(day.halyk)),

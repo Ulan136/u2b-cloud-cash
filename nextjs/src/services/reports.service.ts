@@ -63,17 +63,20 @@ export async function getReport(from: string, to: string) {
     const rashodDay = expensesByDate.get(day.date) ?? 0;
     const dd = debtsByDate.get(day.date) ?? { debt: 0, payment: 0 };
 
-    const obshchReal = computeObshchReal({
-      nal,
-      kas,
-      hal,
-      rashod: rashodDay,
-      zakup,
-      inkas,
-      debt: dd.debt,
-      vozvrat,
-      vozvratDolg: dd.payment,
-    });
+    const obshchReal =
+      day.obshchReal != null
+        ? num(day.obshchReal)
+        : computeObshchReal({
+            nal,
+            kas,
+            hal,
+            rashod: rashodDay,
+            zakup,
+            inkas,
+            debt: dd.debt,
+            vozvrat,
+            vozvratDolg: dd.payment,
+          });
     const minPlus = computeMinPlus(obshchReal, klaud);
 
     sales += klaud;
@@ -182,17 +185,20 @@ export async function getYear(year: number) {
     const kas = num(day.kaspi);
     const hal = num(day.halyk);
     const dd = debtsByDate.get(day.date) ?? { debt: 0, payment: 0 };
-    const obshchReal = computeObshchReal({
-      nal,
-      kas,
-      hal,
-      rashod: expensesByDate.get(day.date) ?? 0,
-      zakup: num(day.zakupTovar),
-      inkas: num(day.inkasNalichka),
-      debt: dd.debt,
-      vozvrat: num(day.vozvrat),
-      vozvratDolg: dd.payment,
-    });
+    const obshchReal =
+      day.obshchReal != null
+        ? num(day.obshchReal)
+        : computeObshchReal({
+            nal,
+            kas,
+            hal,
+            rashod: expensesByDate.get(day.date) ?? 0,
+            zakup: num(day.zakupTovar),
+            inkas: num(day.inkasNalichka),
+            debt: dd.debt,
+            vozvrat: num(day.vozvrat),
+            vozvratDolg: dd.payment,
+          });
     acc[i].klaud += num(day.klaudObshch);
     acc[i].nalichnye += nal;
     acc[i].kaspi += kas;

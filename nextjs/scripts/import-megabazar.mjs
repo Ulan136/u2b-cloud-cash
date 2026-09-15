@@ -109,6 +109,11 @@ function parseWorkbook(path, fileTag, acc) {
         const k = MANUAL[label];
         if (Math.abs(c) >= Math.abs(acc.kassa[date].man[k] || 0)) acc.kassa[date].man[k] = c;
       }
+      if (label === "ОБЩ РЕАЛ") {
+        const c = amount("Касса", S.cellAt, i, 2, fileTag, label);
+        acc.kassa[date] = acc.kassa[date] || { man: {}, exp: {} };
+        if (Math.abs(c) >= Math.abs(acc.kassa[date].obshchReal ?? 0)) acc.kassa[date].obshchReal = c;
+      }
       const cat = typeof row[4] === "string" ? row[4].trim() : null;
       if (cat) {
         const f = amount("Касса", S.cellAt, i, 5, fileTag, cat);
@@ -271,14 +276,15 @@ async function main() {
     const m = acc.kassa[d].man;
     return {
       date: d,
-      klaud_obshch: m.klaud_obshch ?? 0, nalichnye: m.nalichnye ?? 0, kaspi: m.kaspi ?? 0,
+      klaud_obshch: m.klaud_obshch ?? 0, obshch_real: acc.kassa[d].obshchReal ?? null,
+      nalichnye: m.nalichnye ?? 0, kaspi: m.kaspi ?? 0,
       halyk: m.halyk ?? 0, inkas_nalichka: m.inkas_nalichka ?? 0, vozvrat: m.vozvrat ?? 0,
       zakup_tovar: m.zakup_tovar ?? 0, comment: "", closed: true, closed_at: now, closed_by: "import",
     };
   });
   console.log("▶ Импорт кассы:", dayRows.length, "дней");
   await bulkInsert("cash_days",
-    ["date","klaud_obshch","nalichnye","kaspi","halyk","inkas_nalichka","vozvrat","zakup_tovar","comment","closed","closed_at","closed_by"],
+    ["date","klaud_obshch","obshch_real","nalichnye","kaspi","halyk","inkas_nalichka","vozvrat","zakup_tovar","comment","closed","closed_at","closed_by"],
     dayRows);
 
   const expRows = [];
