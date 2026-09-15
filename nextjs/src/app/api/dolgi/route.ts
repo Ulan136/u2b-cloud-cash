@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DATE_RE } from "@/lib/validation";
 import { createDebtSchema, updateDebtSchema } from "@/dto/dolgi.dto";
 import { checkEditPassword } from "@/lib/editAuth";
+import { BadRequestError } from "@/lib/errors";
 import * as dolgiService from "@/services/dolgi.service";
 
 export async function GET(req: NextRequest) {
@@ -14,6 +15,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "clientId неверный" }, { status: 400 });
     }
     return NextResponse.json(await dolgiService.getClientHistory(id));
+  }
+
+  // История долгов за один день (все клиенты).
+  const day = sp.get("day");
+  if (day) {
+    if (!DATE_RE.test(day)) {
+      return NextResponse.json({ error: "day неверный" }, { status: 400 });
+    }
+    return NextResponse.json(await dolgiService.getDayHistory(day));
   }
 
   // Анализ остатков: период опционален; today приходит с клиента (локальная дата).
@@ -33,7 +43,14 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  return NextResponse.json(await dolgiService.createEntry(parsed.data));
+  try {
+    return NextResponse.json(await dolgiService.createEntry(parsed.data));
+  } catch (e) {
+    if (e instanceof BadRequestError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
+    throw e;
+  }
 }
 
 export async function PATCH(req: NextRequest) {

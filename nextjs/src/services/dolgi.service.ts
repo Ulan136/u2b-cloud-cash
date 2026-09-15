@@ -1,4 +1,5 @@
-import { money } from "@/lib/money";
+import { money, num } from "@/lib/money";
+import { BadRequestError } from "@/lib/errors";
 import { DATE_RE } from "@/lib/validation";
 import type { CreateClientInput, CreateDebtInput, UpdateDebtInput } from "@/dto/dolgi.dto";
 import * as debtsRepo from "@/repositories/debts.repo";
@@ -35,11 +36,36 @@ export async function getClientHistory(clientId: number) {
   return { history };
 }
 
+// История долгов за один день (все клиенты) — левая панель, когда клиент не выбран.
+export async function getDayHistory(date: string) {
+  const dayHistory = await debtsRepo.entriesByDate(date);
+  return { dayHistory };
+}
+
+// Округление до копеек — убирает шум float при сравнении остатка с нулём.
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
 export async function createEntry(input: CreateDebtInput) {
   const returnDate =
     input.returnDate && DATE_RE.test(input.returnDate.trim())
       ? input.returnDate.trim()
       : null;
+
+  // Не даём остатку клиента уйти в минус (переплату). Остаток = долги − оплаты
+  // за всё время; после этой записи он не должен стать отрицательным.
+  const debt = num(input.debtAmount);
+  const payment = num(input.paymentAmount);
+  const [totals] = await debtsRepo.clientTotals(input.clientId);
+  const currentOstatok = num(totals?.debt) - num(totals?.payment);
+  const newOstatok = r2(currentOstatok + debt - payment);
+  if (newOstatok < 0) {
+    const maxPay = r2(currentOstatok + debt);
+    throw new BadRequestError(
+      `Остаток ушёл бы в минус (${newOstatok}). Долг клиента сейчас ${r2(
+        currentOstatok
+      )}, максимум к оплате ${maxPay}.`
+    );
+  }
 
   const [created] = await debtsRepo.create({
     date: input.date,

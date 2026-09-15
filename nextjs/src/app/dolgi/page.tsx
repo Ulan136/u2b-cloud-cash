@@ -21,6 +21,10 @@ type HistoryRow = {
   comment: string | null;
   returnDate: string | null;
 };
+type DayRow = HistoryRow & {
+  clientId: number | null;
+  clientName: string | null;
+};
 type SortKey = "name" | "debts" | "payments" | "ostatok";
 type StatusFilter = "all" | "debt" | "overdue";
 
@@ -65,6 +69,13 @@ export default function DolgiPage() {
   const [selected, setSelected] = useState<{ id: number; name: string } | null>(null);
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedIdRef = useRef<number | null>(null);
+
+  // «История дня» — показывается, когда клиент не выбран
+  const [dayDate, setDayDate] = useState(today);
+  const [dayHistory, setDayHistory] = useState<DayRow[] | null>(null);
+  const [dayLoading, setDayLoading] = useState(false);
+  const showDayRef = useRef(false);
+  const dayDateRef = useRef(today);
 
   const [clientQuery, setClientQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,12 +138,39 @@ export default function DolgiPage() {
     setHistory(d.history ?? []);
   }, []);
 
+  const loadDay = useCallback(async (date: string) => {
+    setDayLoading(true);
+    try {
+      const res = await fetch(`/api/dolgi?day=${date}`);
+      const d = await res.json();
+      setDayHistory(d.dayHistory ?? []);
+    } finally {
+      setDayLoading(false);
+    }
+  }, []);
+
+  function openDay() {
+    showDayRef.current = true;
+    dayDateRef.current = dayDate;
+    loadDay(dayDate);
+  }
+  function closeDay() {
+    showDayRef.current = false;
+    setDayHistory(null);
+  }
+  function changeDayDate(date: string) {
+    setDayDate(date);
+    dayDateRef.current = date;
+    if (showDayRef.current) loadDay(date);
+  }
+
   // Живое обновление: перезагружаем просмотр (клиенты, анализ, история выбранного),
   // форму и выбор клиента НЕ трогаем.
   const load = useCallback(async () => {
     await Promise.all([loadClients(), loadAnalysis()]);
     if (selectedIdRef.current != null) await loadHistory(selectedIdRef.current);
-  }, [loadClients, loadAnalysis, loadHistory]);
+    if (showDayRef.current) await loadDay(dayDateRef.current);
+  }, [loadClients, loadAnalysis, loadHistory, loadDay]);
 
   const { refreshing, lastUpdated } = useLiveData("dolgi", load, [from, to]);
 
@@ -160,6 +198,15 @@ export default function DolgiPage() {
     if (!history) return 0;
     return history.reduce((s, h) => s + num(h.debtAmount) - num(h.paymentAmount), 0);
   }, [history]);
+
+  // Итоги истории дня (долги/оплаты за выбранный день).
+  const dayTotals = useMemo(() => {
+    const list = dayHistory ?? [];
+    return {
+      debt: list.reduce((s, r) => s + num(r.debtAmount), 0),
+      pay: list.reduce((s, r) => s + num(r.paymentAmount), 0),
+    };
+  }, [dayHistory]);
 
   // История с учётом фильтра периода (для отображения).
   const shownHistory = useMemo(() => {
@@ -212,6 +259,17 @@ export default function DolgiPage() {
     if (!selected) return setStatus("Выберите клиента");
     if (debtAmount === "" && paymentAmount === "")
       return setStatus("Укажите сумму долга или оплаты");
+    // Предпроверка: остаток клиента не должен уйти в минус (сервер проверит тоже).
+    if (history !== null) {
+      const newOstatok = clientOstatok + num(debtAmount) - num(paymentAmount);
+      if (Math.round(newOstatok * 100) / 100 < 0) {
+        return setStatus(
+          `Нельзя: остаток ушёл бы в минус (${fmt(newOstatok)}). Максимум к оплате: ${fmt(
+            clientOstatok + num(debtAmount)
+          )}.`
+        );
+      }
+    }
     setSaving(true);
     setStatus("");
     try {
@@ -227,15 +285,18 @@ export default function DolgiPage() {
           returnDate,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(typeof d?.error === "string" ? d.error : "Ошибка записи");
+      }
       setDebtAmount("");
       setPaymentAmount("");
       setComment("");
       setReturnDate("");
       setStatus("Записано ✓");
       await Promise.all([loadAnalysis(), loadHistory(selected.id)]);
-    } catch {
-      setStatus("Ошибка записи");
+    } catch (e) {
+      setStatus(e instanceof Error && e.message ? e.message : "Ошибка записи");
     } finally {
       setSaving(false);
     }
@@ -650,8 +711,109 @@ export default function DolgiPage() {
                 </div>
               </div>
             ) : (
-              <div className={panel + " text-center text-sm text-[#9ca3af]"}>
-                Выберите клиента в форме выше или справа в таблице
+              <div className={panel}>
+                <div className="mb-2 flex flex-wrap items-end gap-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                    История дня
+                  </div>
+                  <label className="ml-auto block">
+                    <span className="mb-1 block text-[10px] text-[#9ca3af]">дата</span>
+                    <input
+                      type="date"
+                      value={dayDate}
+                      onChange={(e) => changeDayDate(e.target.value)}
+                      className="rounded-lg bg-white border border-[#e5e7eb] px-2 py-1.5 text-xs"
+                    />
+                  </label>
+                  {dayHistory === null ? (
+                    <button
+                      type="button"
+                      onClick={openDay}
+                      className="rounded-lg bg-[#2f80ed] px-3 py-1.5 text-xs font-semibold text-white active:bg-[#2568c9]"
+                    >
+                      История дня
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={closeDay}
+                      className="rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-xs font-semibold text-[#6b7280]"
+                    >
+                      Скрыть
+                    </button>
+                  )}
+                </div>
+
+                {dayHistory === null ? (
+                  <p className="py-4 text-center text-sm text-[#9ca3af]">
+                    Выберите клиента в форме выше или справа в таблице — либо нажмите
+                    «История дня».
+                  </p>
+                ) : (
+                  <div className="mt-1 overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                    <table className="w-full text-xs tabular-nums">
+                      <thead className="bg-white text-[#6b7280]">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-medium">Клиент</th>
+                          <th className="px-2 py-1.5 text-right font-medium">Долг</th>
+                          <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dayHistory.map((r) => (
+                          <tr
+                            key={r.id}
+                            onClick={() =>
+                              r.clientId != null &&
+                              selectClient({ id: r.clientId, name: r.clientName ?? "" })
+                            }
+                            className={
+                              "border-t border-[#e5e7eb] " +
+                              (r.clientId != null ? "cursor-pointer hover:bg-[#f9fafb]" : "")
+                            }
+                          >
+                            <td className="px-2 py-1.5 text-left text-[#374151]">
+                              {r.clientName ?? "—"}
+                            </td>
+                            <td className="px-2 py-1.5 text-right">
+                              <AmtBadge v={num(r.debtAmount)} kind="debt" />
+                            </td>
+                            <td className="px-2 py-1.5 text-right">
+                              <AmtBadge v={num(r.paymentAmount)} kind="pay" />
+                            </td>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                              {r.comment}
+                            </td>
+                          </tr>
+                        ))}
+                        {!dayLoading && dayHistory.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-2 py-3 text-center text-[#9ca3af]">
+                              Записей за этот день нет
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                      {dayHistory.length > 0 && (
+                        <tfoot className="border-t border-[#e5e7eb] bg-[#f9fafb] font-semibold">
+                          <tr>
+                            <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                              Итого · {dayHistory.length}
+                            </td>
+                            <td className="px-2 py-1.5 text-right">
+                              <AmtBadge v={dayTotals.debt} kind="debt" />
+                            </td>
+                            <td className="px-2 py-1.5 text-right">
+                              <AmtBadge v={dayTotals.pay} kind="pay" />
+                            </td>
+                            <td />
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </section>

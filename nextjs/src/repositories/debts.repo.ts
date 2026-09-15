@@ -37,6 +37,17 @@ export function entriesByDate(date: string) {
     .orderBy(desc(debts.id));
 }
 
+// Итоги по одному клиенту за всё время (для контроля ухода остатка в минус).
+export function clientTotals(clientId: number) {
+  return db
+    .select({
+      debt: sql<string>`COALESCE(SUM(${debts.debtAmount}), 0)`,
+      payment: sql<string>`COALESCE(SUM(${debts.paymentAmount}), 0)`,
+    })
+    .from(debts)
+    .where(eq(debts.clientId, clientId));
+}
+
 export function dayTotals(date: string) {
   return db
     .select({
