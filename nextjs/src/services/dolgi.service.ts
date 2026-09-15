@@ -51,19 +51,20 @@ export async function createEntry(input: CreateDebtInput) {
       ? input.returnDate.trim()
       : null;
 
-  // Не даём остатку клиента уйти в минус (переплату). Остаток = долги − оплаты
-  // за всё время; после этой записи он не должен стать отрицательным.
+  // Остаток клиента не должен уйти в минус — КРОМЕ случая осознанной предоплаты
+  // (фронт спрашивает «Это предоплата?» и присылает prepayment:true).
   const debt = num(input.debtAmount);
   const payment = num(input.paymentAmount);
   const [totals] = await debtsRepo.clientTotals(input.clientId);
   const currentOstatok = num(totals?.debt) - num(totals?.payment);
   const newOstatok = r2(currentOstatok + debt - payment);
-  if (newOstatok < 0) {
+  const goesNegative = newOstatok < 0;
+  if (goesNegative && !input.prepayment) {
     const maxPay = r2(currentOstatok + debt);
     throw new BadRequestError(
       `Остаток ушёл бы в минус (${newOstatok}). Долг клиента сейчас ${r2(
         currentOstatok
-      )}, максимум к оплате ${maxPay}.`
+      )}, максимум к оплате ${maxPay}. Если это предоплата — подтвердите.`
     );
   }
 
@@ -74,6 +75,8 @@ export async function createEntry(input: CreateDebtInput) {
     paymentAmount: money(input.paymentAmount),
     comment: input.comment ?? "",
     returnDate,
+    // помечаем предоплатой только когда операция реально уводит в минус
+    prepayment: goesNegative && input.prepayment === true,
   });
   return { entry: created };
 }

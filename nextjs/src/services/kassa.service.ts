@@ -3,6 +3,7 @@ import type { SaveDayInput } from "@/dto/kassa.dto";
 import * as cashDaysRepo from "@/repositories/cashDays.repo";
 import * as expensesRepo from "@/repositories/expenses.repo";
 import * as debtsRepo from "@/repositories/debts.repo";
+import * as salaryRepo from "@/repositories/salary.repo";
 
 // ── чистые доменные формулы (лист «Касса», ячейки C7 и C17) ──
 export interface ObshchRealInput {
@@ -32,7 +33,9 @@ export async function getDay(date: string) {
   const [day] = await cashDaysRepo.findByDate(date);
   const expenses = await expensesRepo.findByDate(date);
   const [totals] = await debtsRepo.dayTotals(date);
-  return { day: day ?? null, expenses, totals };
+  // Расход «ЗАРПЛАТА» кассы берём автоматически из журнала Зарплаты за этот день.
+  const [sal] = await salaryRepo.dayTotal(date);
+  return { day: day ?? null, expenses, totals, salaryDayTotal: Number(sal?.t ?? 0) };
 }
 
 export async function saveDay(input: SaveDayInput) {

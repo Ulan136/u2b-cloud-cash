@@ -85,6 +85,8 @@ export const debts = pgTable("debts", {
   paymentAmount: numeric("payment_amount").default("0"),
   comment: text("comment"),
   returnDate: date("return_date"),
+  // Осознанная предоплата: оплата увела остаток клиента в минус — не ошибка.
+  prepayment: boolean("prepayment").default(false),
 });
 
 export const incassation = pgTable("incassation", {

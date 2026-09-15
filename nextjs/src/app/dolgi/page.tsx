@@ -20,6 +20,7 @@ type HistoryRow = {
   paymentAmount: string;
   comment: string | null;
   returnDate: string | null;
+  prepayment?: boolean;
 };
 type DayRow = HistoryRow & {
   clientId: number | null;
@@ -41,6 +42,18 @@ function todayStr() {
 const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
+
+/** Бейдж «предоплата» — синий, помечает осознанный уход остатка в минус. */
+function PrepayBadge() {
+  return (
+    <span
+      className="mr-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold align-middle"
+      style={{ background: "#e7eefe", color: "#2f6fe0" }}
+    >
+      предоплата
+    </span>
+  );
+}
 
 /** Сумма-бейдж: долг — красный «+», оплата — зелёный «−». Пустая при нуле. */
 function AmtBadge({ v, kind }: { v: number; kind: "debt" | "pay" }) {
@@ -103,6 +116,10 @@ export default function DolgiPage() {
   const [recordDate, setRecordDate] = useState(today);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+
+  // модалка «Это предоплата?» — когда оплата уводит остаток клиента в минус
+  const [prepayOpen, setPrepayOpen] = useState(false);
+  const [prepayInfo, setPrepayInfo] = useState<{ newOstatok: number } | null>(null);
 
   // правая панель
   const [balances, setBalances] = useState<Balance[]>([]);
@@ -255,19 +272,18 @@ export default function DolgiPage() {
     setNewPhone("");
   }
 
-  async function save() {
+  async function save(prepayment = false) {
     if (!selected) return setStatus("Выберите клиента");
     if (debtAmount === "" && paymentAmount === "")
       return setStatus("Укажите сумму долга или оплаты");
-    // Предпроверка: остаток клиента не должен уйти в минус (сервер проверит тоже).
-    if (history !== null) {
+    // Если остаток клиента уходит в минус — это либо ошибка, либо предоплата.
+    // Спрашиваем пользователя; при подтверждении отправляем prepayment:true.
+    if (!prepayment && history !== null) {
       const newOstatok = clientOstatok + num(debtAmount) - num(paymentAmount);
       if (Math.round(newOstatok * 100) / 100 < 0) {
-        return setStatus(
-          `Нельзя: остаток ушёл бы в минус (${fmt(newOstatok)}). Максимум к оплате: ${fmt(
-            clientOstatok + num(debtAmount)
-          )}.`
-        );
+        setPrepayInfo({ newOstatok });
+        setPrepayOpen(true);
+        return;
       }
     }
     setSaving(true);
@@ -283,6 +299,7 @@ export default function DolgiPage() {
           paymentAmount,
           comment,
           returnDate,
+          prepayment,
         }),
       });
       if (!res.ok) {
@@ -508,7 +525,7 @@ export default function DolgiPage() {
               </div>
               <button
                 type="button"
-                onClick={save}
+                onClick={() => save()}
                 disabled={saving}
                 className="mt-3 w-full rounded-lg bg-[#2f80ed] py-2.5 text-sm font-semibold text-white disabled:opacity-50 active:bg-[#2568c9]"
               >
@@ -679,6 +696,7 @@ export default function DolgiPage() {
                                   <AmtBadge v={num(h.paymentAmount)} kind="pay" />
                                 </td>
                                 <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                                  {h.prepayment && <PrepayBadge />}
                                   {h.comment}
                                 </td>
                                 <td className="px-1 py-1.5 text-right">
@@ -783,6 +801,7 @@ export default function DolgiPage() {
                               <AmtBadge v={num(r.paymentAmount)} kind="pay" />
                             </td>
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                              {r.prepayment && <PrepayBadge />}
                               {r.comment}
                             </td>
                           </tr>
@@ -944,6 +963,47 @@ export default function DolgiPage() {
           </section>
         </div>
       </div>
+
+      {/* Модалка предоплаты (остаток уходит в минус) */}
+      {prepayOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setPrepayOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-base font-bold text-[#1f2933]">Остаток уходит в минус</div>
+            <p className="mt-2 text-sm text-[#6b7280]">
+              После этой оплаты остаток «{selected?.name}» станет{" "}
+              <span className="font-semibold text-[#2f80ed]">
+                {fmt(prepayInfo?.newOstatok ?? 0)}
+              </span>
+              . Это предоплата (клиент заплатил вперёд)?
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPrepayOpen(false);
+                  save(true);
+                }}
+                className="flex-1 rounded-lg bg-[#2f80ed] py-2.5 text-sm font-semibold text-white active:bg-[#2568c9]"
+              >
+                Да, предоплата
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrepayOpen(false)}
+                className="flex-1 rounded-lg border border-[#e5e7eb] bg-white py-2.5 text-sm font-semibold text-[#6b7280]"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

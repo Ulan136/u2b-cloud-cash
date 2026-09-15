@@ -8,6 +8,8 @@ export const createDebtSchema = z.object({
   paymentAmount: z.string().optional().default("0"),
   comment: z.string().optional().default(""),
   returnDate: z.string().optional().nullable(),
+  // подтверждённая предоплата (разрешает уход остатка в минус)
+  prepayment: z.boolean().optional().default(false),
 });
 export type CreateDebtInput = z.infer<typeof createDebtSchema>;
 

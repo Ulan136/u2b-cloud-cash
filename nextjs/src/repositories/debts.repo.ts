@@ -13,6 +13,7 @@ export function historyByClient(clientId: number) {
       paymentAmount: debts.paymentAmount,
       comment: debts.comment,
       returnDate: debts.returnDate,
+      prepayment: debts.prepayment,
     })
     .from(debts)
     .where(eq(debts.clientId, clientId))
@@ -30,6 +31,7 @@ export function entriesByDate(date: string) {
       paymentAmount: debts.paymentAmount,
       comment: debts.comment,
       returnDate: debts.returnDate,
+      prepayment: debts.prepayment,
     })
     .from(debts)
     .leftJoin(clients, eq(clients.id, debts.clientId))

@@ -16,8 +16,8 @@ const DAY_KEYS = [
 type DayKey = (typeof DAY_KEYS)[number];
 
 // Фиксированный список категорий (как строки в листе), без селектов.
+// «ЗАРПЛАТА» здесь НЕТ — она авто из журнала Зарплаты за день (см. salaryDayTotal).
 const CATEGORIES = [
-  "ЗАРПЛАТА",
   "расход БРАК",
   "Логистика",
   "Расходы разн",
@@ -62,6 +62,48 @@ const num = (v: string) => {
 const fmt = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
 
+// Калькулятор: значение ячейки может быть выражением «42000+20000» → 62000.
+// Безопасный разбор (+ − * / и скобки), без eval.
+function evalExpr(input: string): number {
+  const s = String(input ?? "").replace(/\s/g, "").replace(/,/g, ".");
+  if (!s) return 0;
+  if (!/^[0-9.+\-*/()]+$/.test(s)) return num(s);
+  let i = 0;
+  const peek = () => s[i];
+  const parseExpr = (): number => {
+    let v = parseTerm();
+    while (peek() === "+" || peek() === "-") {
+      const op = s[i++];
+      const t = parseTerm();
+      v = op === "+" ? v + t : v - t;
+    }
+    return v;
+  };
+  const parseTerm = (): number => {
+    let v = parseFactor();
+    while (peek() === "*" || peek() === "/") {
+      const op = s[i++];
+      const f = parseFactor();
+      v = op === "*" ? v * f : f === 0 ? 0 : v / f;
+    }
+    return v;
+  };
+  const parseFactor = (): number => {
+    if (peek() === "+") { i++; return parseFactor(); }
+    if (peek() === "-") { i++; return -parseFactor(); }
+    if (peek() === "(") { i++; const v = parseExpr(); if (peek() === ")") i++; return v; }
+    let n = "";
+    while (i < s.length && /[0-9.]/.test(s[i])) n += s[i++];
+    if (n === "") { i++; return 0; }
+    const val = Number(n);
+    return Number.isFinite(val) ? val : 0;
+  };
+  const r = parseExpr();
+  return Number.isFinite(r) ? Math.round(r * 100) / 100 : 0;
+}
+// Есть ли в строке арифметика (чтобы показать «= сумму» и карандаш).
+const hasExpr = (v: string) => /[+\-*/]/.test(String(v ?? "").replace(/^\s*-/, ""));
+
 const STRIPE: Partial<Record<DayKey, string>> = {
   nalichnye: "#3b6ea5",
   kaspi: "#a55b5b",
@@ -86,6 +128,8 @@ export default function KassaPage() {
   const [closed, setClosed] = useState(false);
   const [closedAt, setClosedAt] = useState<string | null>(null);
   const [closedBy, setClosedBy] = useState<string | null>(null);
+  // Авто-расход «ЗАРПЛАТА» = сумма выплат из журнала Зарплаты за выбранный день.
+  const [salaryDayTotal, setSalaryDayTotal] = useState(0);
 
   const archRange = useMemo(() => {
     const t = new Date();
@@ -114,6 +158,7 @@ export default function KassaPage() {
         const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
 
         setTotals(data.totals ?? { debt: "0", payment: "0" });
+        setSalaryDayTotal(Number(data.salaryDayTotal ?? 0));
         setArchive(arch.days ?? []);
         // статус смены обновляем всегда (в т.ч. если авто-закрытие произошло в фоне)
         setClosed(Boolean(data.day?.closed));
@@ -140,6 +185,7 @@ export default function KassaPage() {
           const extras: string[] = [];
           for (const e of data.expenses ?? []) {
             const cat = String(e.category ?? "");
+            if (cat === "ЗАРПЛАТА") continue; // авто из журнала Зарплаты
             map[cat] = { amount: s(e.amount), comment: s(e.comment) };
             if (!CATEGORIES.includes(cat)) extras.push(cat);
           }
@@ -159,20 +205,25 @@ export default function KassaPage() {
     setDay((d) => ({ ...d, [key]: value }));
   const updateExp = (cat: string, patch: Partial<{ amount: string; comment: string }>) =>
     setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), ...patch } }));
+  // «Карандаш»: свернуть выражение (42000+20000) в его сумму (62000), чтобы дальше добавлять.
+  const collapseField = (key: DayKey) =>
+    setDay((d) => ({ ...d, [key]: String(evalExpr(d[key])) }));
+  const collapseExp = (cat: string) =>
+    setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), amount: String(evalExpr(m[cat]?.amount ?? "")) } }));
 
   const expensesTotal = useMemo(
-    () => displayCats.reduce((s, c) => s + num(exp[c]?.amount ?? ""), 0),
-    [displayCats, exp]
+    () => salaryDayTotal + displayCats.reduce((s, c) => s + evalExpr(exp[c]?.amount ?? ""), 0),
+    [displayCats, exp, salaryDayTotal]
   );
 
   const calc = useMemo(() => {
-    const nal = num(day.nalichnye);
-    const kas = num(day.kaspi);
-    const hal = num(day.halyk);
-    const inkas = num(day.inkasNalichka);
-    const vozvrat = num(day.vozvrat);
-    const zakup = num(day.zakupTovar);
-    const klaud = num(day.klaudObshch);
+    const nal = evalExpr(day.nalichnye);
+    const kas = evalExpr(day.kaspi);
+    const hal = evalExpr(day.halyk);
+    const inkas = evalExpr(day.inkasNalichka);
+    const vozvrat = evalExpr(day.vozvrat);
+    const zakup = evalExpr(day.zakupTovar);
+    const klaud = evalExpr(day.klaudObshch);
     const debt = num(totals.debt);
     const vozvratDolg = num(totals.payment);
     const rashod = expensesTotal;
@@ -189,17 +240,32 @@ export default function KassaPage() {
     setSaving(true);
     setStatus("");
     try {
+      // Выражения-калькулятор превращаем в числа перед отправкой (в БД — numeric).
+      const dayEval = {
+        klaudObshch: String(evalExpr(day.klaudObshch)),
+        nalichnye: String(evalExpr(day.nalichnye)),
+        kaspi: String(evalExpr(day.kaspi)),
+        halyk: String(evalExpr(day.halyk)),
+        inkasNalichka: String(evalExpr(day.inkasNalichka)),
+        vozvrat: String(evalExpr(day.vozvrat)),
+        zakupTovar: String(evalExpr(day.zakupTovar)),
+        comment: day.comment,
+      };
       const expenses = displayCats
         .map((c) => ({
           category: c,
-          amount: exp[c]?.amount ?? "",
+          amount: String(evalExpr(exp[c]?.amount ?? "")),
           comment: exp[c]?.comment ?? "",
         }))
-        .filter((e) => num(e.amount) !== 0);
+        .filter((e) => Number(e.amount) !== 0);
+      // ЗАРПЛАТА — авто из журнала Зарплаты за день (сохраняем как расход дня).
+      if (salaryDayTotal !== 0) {
+        expenses.push({ category: "ЗАРПЛАТА", amount: String(salaryDayTotal), comment: "" });
+      }
       const res = await fetch("/api/kassa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day, expenses, action }),
+        body: JSON.stringify({ date, day: dayEval, expenses, action }),
       });
       if (!res.ok) throw new Error();
       setStatus(
@@ -213,22 +279,35 @@ export default function KassaPage() {
     }
   }
 
-  const inputRow = (key: DayKey, label: string) => (
-    <div
-      className="flex h-10 items-center border-l-4"
-      style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
-    >
-      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">{label}</span>
-      <input
-        inputMode="decimal"
-        value={day[key]}
-        onChange={(e) => setField(key, e.target.value)}
-        placeholder="0"
-        disabled={closed}
-        className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
-      />
-    </div>
-  );
+  const inputRow = (key: DayKey, label: string) => {
+    const expr = hasExpr(day[key]);
+    return (
+      <div
+        className="flex h-10 items-center border-l-4"
+        style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
+      >
+        <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">{label}</span>
+        {expr && !closed && (
+          <button
+            type="button"
+            onClick={() => collapseField(key)}
+            title="Свернуть в сумму — потом можно добавлять дальше"
+            className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-[11px] font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+          >
+            ✎ ={fmt(evalExpr(day[key]))}
+          </button>
+        )}
+        <input
+          inputMode="text"
+          value={day[key]}
+          onChange={(e) => setField(key, e.target.value)}
+          placeholder="0"
+          disabled={closed}
+          className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
+        />
+      </div>
+    );
+  };
 
   const autoRow = (label: string, value: number, highlight = false) => (
     <div
@@ -312,6 +391,15 @@ export default function KassaPage() {
               <span className="text-xs tabular-nums text-[#374151]">Σ {fmt(expensesTotal)}</span>
             </div>
             <div className="overflow-hidden rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
+              {/* ЗАРПЛАТА — авто из журнала Зарплаты за день, только для просмотра */}
+              <div className="flex h-10 items-center" style={{ background: "#eef7ff" }}>
+                <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">
+                  ЗАРПЛАТА <span className="text-[10px] text-[#9ca3af]">· из журнала</span>
+                </span>
+                <span className="w-28 pr-3 text-right text-sm font-semibold tabular-nums text-[#374151]">
+                  {fmt(salaryDayTotal)}
+                </span>
+              </div>
               {displayCats.map((cat) => (
                 <div key={cat}>
                   <div
@@ -321,6 +409,16 @@ export default function KassaPage() {
                     <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">
                       {cat}
                     </span>
+                    {hasExpr(exp[cat]?.amount ?? "") && !closed && (
+                      <button
+                        type="button"
+                        onClick={() => collapseExp(cat)}
+                        title="Свернуть в сумму — потом можно добавлять дальше"
+                        className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-[11px] font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+                      >
+                        ✎ ={fmt(evalExpr(exp[cat]?.amount ?? ""))}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() =>
@@ -337,7 +435,7 @@ export default function KassaPage() {
                       💬
                     </button>
                     <input
-                      inputMode="decimal"
+                      inputMode="text"
                       value={exp[cat]?.amount ?? ""}
                       onChange={(e) => updateExp(cat, { amount: e.target.value })}
                       placeholder="0"
