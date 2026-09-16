@@ -45,10 +45,18 @@ const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rg
 
 // ── Умный поиск клиента: терпит опечатки/пропуски ──
 const norm = (s: string) => s.toLowerCase().replace(/ё/g, "е").trim();
-function isSubseq(q: string, n: string) {
-  let i = 0;
-  for (let j = 0; j < n.length && i < q.length; j++) if (n[j] === q[i]) i++;
-  return i === q.length;
+// Подпоследовательность + метрика компактности: если буквы запроса идут по порядку,
+// возвращаем «разброс» (last-first) и старт; чем компактнее и раньше — тем лучше.
+function subseqSpan(q: string, n: string): { ok: boolean; span: number; first: number } {
+  let i = 0, first = -1, last = -1;
+  for (let j = 0; j < n.length && i < q.length; j++) {
+    if (n[j] === q[i]) {
+      if (first < 0) first = j;
+      last = j;
+      i++;
+    }
+  }
+  return { ok: i === q.length, span: last - first, first: Math.max(0, first) };
 }
 function lev(a: string, b: string) {
   const m = a.length, n = b.length;
@@ -70,7 +78,8 @@ function matchScore(query: string, name: string): number {
   if (!q) return 0;
   const idx = n.indexOf(q);
   if (idx >= 0) return 1000 - idx; // подстрока — лучший вариант
-  if (isSubseq(q, n)) return 400 - (n.length - q.length); // буквы по порядку
+  const ss = subseqSpan(q, n);
+  if (ss.ok) return 600 - ss.span - ss.first; // компактнее и раньше = выше
   const words = n.split(/\s+/).filter(Boolean);
   const tol = q.length <= 3 ? 1 : q.length <= 6 ? 2 : 3;
   let best = lev(q, n);
