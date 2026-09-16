@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DATE_RE } from "@/lib/validation";
 import { createSalarySchema, updateSalarySchema } from "@/dto/salary.dto";
 import { checkEditPassword } from "@/lib/editAuth";
+import { authorFromReq } from "@/lib/managerAuth";
 import * as salaryService from "@/services/salary.service";
 
 export async function GET(req: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  return NextResponse.json(await salaryService.createEntry(parsed.data));
+  return NextResponse.json(await salaryService.createEntry(parsed.data, authorFromReq(req)));
 }
 
 export async function PATCH(req: NextRequest) {

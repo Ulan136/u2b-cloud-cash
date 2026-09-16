@@ -3,6 +3,7 @@ import { DATE_RE } from "@/lib/validation";
 import { createDebtSchema, updateDebtSchema } from "@/dto/dolgi.dto";
 import { checkEditPassword } from "@/lib/editAuth";
 import { BadRequestError } from "@/lib/errors";
+import { authorFromReq } from "@/lib/managerAuth";
 import * as dolgiService from "@/services/dolgi.service";
 
 export async function GET(req: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   try {
-    return NextResponse.json(await dolgiService.createEntry(parsed.data));
+    return NextResponse.json(await dolgiService.createEntry(parsed.data, authorFromReq(req)));
   } catch (e) {
     if (e instanceof BadRequestError) {
       return NextResponse.json({ error: e.message }, { status: 400 });

@@ -45,7 +45,7 @@ export async function getDayHistory(date: string) {
 // Округление до копеек — убирает шум float при сравнении остатка с нулём.
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-export async function createEntry(input: CreateDebtInput) {
+export async function createEntry(input: CreateDebtInput, author: string | null = null) {
   const returnDate =
     input.returnDate && DATE_RE.test(input.returnDate.trim())
       ? input.returnDate.trim()
@@ -77,6 +77,7 @@ export async function createEntry(input: CreateDebtInput) {
     returnDate,
     // помечаем предоплатой только когда операция реально уводит в минус
     prepayment: goesNegative && input.prepayment === true,
+    author,
   });
   return { entry: created };
 }

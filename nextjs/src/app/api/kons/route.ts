@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DATE_RE } from "@/lib/validation";
 import { createKonsSchema, updateKonsSchema } from "@/dto/kons.dto";
 import { checkEditPassword } from "@/lib/editAuth";
+import { authorFromReq } from "@/lib/managerAuth";
 import * as konsService from "@/services/kons.service";
 
 export async function GET(req: NextRequest) {
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  return NextResponse.json(await konsService.createEntry(parsed.data));
+  return NextResponse.json(await konsService.createEntry(parsed.data, authorFromReq(req)));
 }
 
 export async function PATCH(req: NextRequest) {

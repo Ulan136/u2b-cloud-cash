@@ -14,11 +14,13 @@ type DirRow = {
 
 type TabDef =
   | { k: string; label: string; kind: "dir"; endpoint: string; nameLabel: string; withHidden?: boolean }
+  | { k: string; label: string; kind: "users" }
   | { k: string; label: string; kind: "accounts" }
   | { k: string; label: string; kind: "shift" }
   | { k: string; label: string; kind: "security" };
 
 const TABS: TabDef[] = [
+  { k: "users", label: "Пользователи", kind: "users" },
   { k: "clients", label: "Клиенты", kind: "dir", endpoint: "/api/settings/clients", nameLabel: "Клиент" },
   { k: "employees", label: "Работники", kind: "dir", endpoint: "/api/settings/employees", nameLabel: "Работник", withHidden: true },
   { k: "suppliers", label: "Фирмы", kind: "dir", endpoint: "/api/settings/suppliers", nameLabel: "Поставщик" },
@@ -68,6 +70,7 @@ export default function SettingsPage() {
             withHidden={!!active.withHidden}
           />
         )}
+        {active.kind === "users" && <UsersTab />}
         {active.kind === "accounts" && <AccountsTab />}
         {active.kind === "shift" && <ShiftTab />}
         {active.kind === "security" && <SecurityTab />}
@@ -552,6 +555,220 @@ function SecurityTab() {
       </button>
 
       {status && <p className="text-xs text-[#047857]">{status}</p>}
+    </div>
+  );
+}
+
+// ── Пользователи (менеджеры) ──
+const PAGES = [
+  { key: "/", label: "Дашборд" },
+  { key: "/kassa", label: "Касса" },
+  { key: "/dolgi", label: "Долги" },
+  { key: "/salary", label: "Зарплата" },
+  { key: "/kons", label: "КОНС" },
+  { key: "/finance", label: "Финансы" },
+  { key: "/reports", label: "Отчёты" },
+  { key: "/analytics", label: "Анализы" },
+];
+
+type ManagerRow = {
+  id: number;
+  name: string;
+  login: string;
+  isAdmin: boolean;
+  pages: string[];
+  archived: boolean;
+};
+
+function UsersTab() {
+  const [rows, setRows] = useState<ManagerRow[]>([]);
+  const [editing, setEditing] = useState<null | "new" | number>(null);
+  const [name, setName] = useState("");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pages, setPages] = useState<Set<string>>(new Set());
+  const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    const r = await fetch("/api/managers");
+    const d = await r.json();
+    setRows(d.managers ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  function startNew() {
+    setEditing("new");
+    setName("");
+    setLogin("");
+    setPassword("");
+    setIsAdmin(false);
+    setPages(new Set(PAGES.map((p) => p.key)));
+    setStatus("");
+  }
+  function startEdit(m: ManagerRow) {
+    setEditing(m.id);
+    setName(m.name);
+    setLogin(m.login);
+    setPassword("");
+    setIsAdmin(m.isAdmin);
+    setPages(new Set(m.pages));
+    setStatus("");
+  }
+  function togglePage(k: string) {
+    setPages((prev) => {
+      const n = new Set(prev);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
+      return n;
+    });
+  }
+
+  async function save() {
+    if (!name.trim()) return setStatus("Укажите имя");
+    if (!login.trim()) return setStatus("Укажите логин");
+    if (editing === "new" && !password) return setStatus("Укажите пароль");
+    setSaving(true);
+    setStatus("");
+    try {
+      const body = { name, login, password: password || undefined, isAdmin, pages: Array.from(pages) };
+      const res =
+        editing === "new"
+          ? await fetch("/api/managers", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            })
+          : await fetch("/api/managers", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...body, id: editing }),
+            });
+      const d = await res.json();
+      if (!res.ok) {
+        setStatus(typeof d?.error === "string" ? d.error : "Ошибка");
+        return;
+      }
+      setEditing(null);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(id: number) {
+    if (!window.confirm("Удалить пользователя?")) return;
+    const res = await fetch(`/api/managers?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      if (editing === id) setEditing(null);
+      await load();
+    }
+  }
+
+  return (
+    <div className={card + " space-y-4"}>
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-[#1f2933]">Пользователи программы</div>
+        <button
+          type="button"
+          onClick={startNew}
+          className="rounded-lg bg-[#f2994a] px-3 py-2 text-sm font-semibold text-white"
+        >
+          + Добавить
+        </button>
+      </div>
+      <p className="text-xs text-[#6b7280]">
+        При открытии программы менеджер выбирает себя и вводит пароль (запоминается на
+        устройстве). Каждая операция записывается с автором. Админ видит всё и управляет
+        пользователями; для менеджера отметьте доступные страницы.
+      </p>
+
+      {editing !== null && (
+        <div className="space-y-3 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs text-[#6b7280]">Имя</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} className={input} placeholder="Напр. Ерлан" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs text-[#6b7280]">Логин</span>
+              <input value={login} onChange={(e) => setLogin(e.target.value)} className={input} placeholder="erlan" autoComplete="off" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs text-[#6b7280]">
+                Пароль {editing !== "new" && <span className="text-[#9ca3af]">(пусто = не менять)</span>}
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={input}
+                placeholder="••••"
+                autoComplete="new-password"
+              />
+            </label>
+            <label className="flex items-center gap-2 pt-6">
+              <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} className="h-4 w-4" />
+              <span className="text-sm text-[#374151]">Администратор (полный доступ)</span>
+            </label>
+          </div>
+
+          {!isAdmin && (
+            <div>
+              <div className="mb-1 text-xs font-semibold text-[#6b7280]">Доступные страницы</div>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                {PAGES.map((p) => (
+                  <label key={p.key} className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-2 py-1.5">
+                    <input type="checkbox" checked={pages.has(p.key)} onChange={() => togglePage(p.key)} className="h-4 w-4" />
+                    <span className="truncate text-[13px] text-[#374151]">{p.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="rounded-lg bg-[#2f80ed] px-5 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {saving ? "…" : "Сохранить"}
+            </button>
+            <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-[#e5e7eb] bg-white px-4 py-2 text-sm text-[#6b7280]">
+              Отмена
+            </button>
+            {status && <span className="text-xs text-[#c81e1e]">{status}</span>}
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-lg border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
+        {rows.map((m) => (
+          <div key={m.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+            <span className="font-semibold text-[#1f2933]">{m.name}</span>
+            <span className="text-xs text-[#9ca3af]">@{m.login}</span>
+            {m.isAdmin ? (
+              <span className="rounded bg-[#eaf1fd] px-1.5 py-0.5 text-[11px] font-semibold text-[#2f6fe0]">админ</span>
+            ) : (
+              <span className="text-[11px] text-[#9ca3af]">страниц: {m.pages.length}</span>
+            )}
+            <span className="ml-auto flex items-center gap-1">
+              <button type="button" onClick={() => startEdit(m)} className="rounded px-2 py-1 text-[#2f6fe0] hover:bg-[#eaf1fd]">✎</button>
+              <button type="button" onClick={() => remove(m.id)} className="rounded px-2 py-1 text-[#c81e1e] hover:bg-[#fdecec]">🗑</button>
+            </span>
+          </div>
+        ))}
+        {rows.length === 0 && (
+          <div className="px-3 py-4 text-center text-sm text-[#9ca3af]">
+            Пока нет пользователей. Добавьте первого — сделайте его администратором.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

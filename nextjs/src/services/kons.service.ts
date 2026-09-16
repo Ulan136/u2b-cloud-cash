@@ -31,13 +31,14 @@ export async function getSupplierHistory(supplier: string) {
   return { history };
 }
 
-export async function createEntry(input: CreateKonsInput) {
+export async function createEntry(input: CreateKonsInput, author: string | null = null) {
   const [entry] = await konsRepo.create({
     date: input.date,
     supplier: input.supplier,
     prihod: money(input.prihod),
     rashod: money(input.rashod),
     comment: input.comment ?? "",
+    author,
   });
   return { entry };
 }

@@ -42,6 +42,19 @@ export const appSettings = pgTable("app_settings", {
   value: text("value"),
 });
 
+// Пользователи программы (менеджеры): вход по «выбрал себя + пароль»,
+// права на страницы, отметка автора операций. Отдельно от работников (зарплата).
+export const managers = pgTable("managers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  login: text("login").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  isAdmin: boolean("is_admin").default(false), // админ = полный доступ + управление
+  pages: text("pages"), // JSON-массив ключей страниц; у админа не используется (всё)
+  archived: boolean("archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Справочник поставщиков / фирм (для КОНС)
 export const suppliers = pgTable("suppliers", {
   id: serial("id").primaryKey(),
@@ -70,6 +83,7 @@ export const cashDays = pgTable("cash_days", {
   closed: boolean("closed").default(false),
   closedAt: timestamp("closed_at"),
   closedBy: text("closed_by"), // 'manual' | 'auto'
+  author: text("author"), // менеджер, сохранивший день
 });
 
 export const cashExpenses = pgTable("cash_expenses", {
@@ -78,6 +92,7 @@ export const cashExpenses = pgTable("cash_expenses", {
   category: text("category").notNull(),
   amount: numeric("amount").notNull(),
   comment: text("comment"),
+  author: text("author"),
 });
 
 export const debts = pgTable("debts", {
@@ -90,6 +105,7 @@ export const debts = pgTable("debts", {
   returnDate: date("return_date"),
   // Осознанная предоплата: оплата увела остаток клиента в минус — не ошибка.
   prepayment: boolean("prepayment").default(false),
+  author: text("author"),
 });
 
 export const incassation = pgTable("incassation", {
@@ -108,6 +124,7 @@ export const salary = pgTable("salary", {
   employee: text("employee").notNull(),
   amount: numeric("amount").notNull(),
   comment: text("comment"),
+  author: text("author"),
 });
 
 export const kons = pgTable("kons", {
@@ -117,6 +134,7 @@ export const kons = pgTable("kons", {
   prihod: numeric("prihod").default("0"),
   rashod: numeric("rashod").default("0"),
   comment: text("comment"),
+  author: text("author"),
 });
 
 // ── Финансовый модуль ──
@@ -148,6 +166,7 @@ export const finOps = pgTable("fin_ops", {
   amount: numeric("amount").notNull(),
   comment: text("comment"),
   toAccountId: integer("to_account_id").references(() => finAccounts.id),
+  author: text("author"),
 });
 
 // Себестоимость помесячно (для годового отчёта). Отдельно от cash_days.sebestoimost.

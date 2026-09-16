@@ -150,7 +150,7 @@ export async function getOps(raw: {
   return { ops };
 }
 
-export async function createOp(input: CreateOpInput) {
+export async function createOp(input: CreateOpInput, author: string | null = null) {
   const [created] = await finRepo.createOp({
     date: input.date,
     name: input.name || null,
@@ -159,6 +159,7 @@ export async function createOp(input: CreateOpInput) {
     amount: String(Math.round(input.amount * 100) / 100),
     comment: input.comment || null,
     toAccountId: input.type === "Перевод" ? input.toAccountId ?? null : null,
+    author,
   });
   return { op: created };
 }

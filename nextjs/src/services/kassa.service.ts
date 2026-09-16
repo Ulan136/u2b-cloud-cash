@@ -38,11 +38,12 @@ export async function getDay(date: string) {
   return { day: day ?? null, expenses, totals, salaryDayTotal: Number(sal?.t ?? 0) };
 }
 
-export async function saveDay(input: SaveDayInput) {
+export async function saveDay(input: SaveDayInput, author: string | null = null) {
   const { date, day, expenses, action } = input;
 
   const base = {
     date,
+    author,
     klaudObshch: money(day.klaudObshch),
     // фиксируем ОБЩ РЕАЛ, если пришёл с клиента (иначе оставляем как есть — null → формула)
     ...(day.obshchReal != null && day.obshchReal !== ""
@@ -76,6 +77,7 @@ export async function saveDay(input: SaveDayInput) {
       category: e.category,
       amount: money(e.amount),
       comment: e.comment ?? "",
+      author,
     }));
   if (rows.length) {
     await expensesRepo.insertMany(rows);

@@ -21,6 +21,7 @@ type HistoryRow = {
   comment: string | null;
   returnDate: string | null;
   prepayment?: boolean;
+  author?: string | null;
 };
 type DayRow = HistoryRow & {
   clientId: number | null;
@@ -790,6 +791,9 @@ export default function DolgiPage() {
                                 <td className="px-2 py-1.5 text-left text-[#6b7280]">
                                   {h.prepayment && <PrepayBadge />}
                                   {h.comment}
+                                  {h.author && (
+                                    <span className="ml-1 text-[11px] text-[#9ca3af]">· {h.author}</span>
+                                  )}
                                 </td>
                                 <td className="px-1 py-1.5 text-right">
                                   <button
@@ -895,6 +899,9 @@ export default function DolgiPage() {
                             <td className="px-2 py-1.5 text-left text-[#6b7280]">
                               {r.prepayment && <PrepayBadge />}
                               {r.comment}
+                              {r.author && (
+                                <span className="ml-1 text-[11px] text-[#9ca3af]">· {r.author}</span>
+                              )}
                             </td>
                           </tr>
                         ))}

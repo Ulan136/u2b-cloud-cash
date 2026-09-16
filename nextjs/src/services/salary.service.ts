@@ -32,12 +32,13 @@ export async function getEmployeeHistory(employee: string) {
   return { history };
 }
 
-export async function createEntry(input: CreateSalaryInput) {
+export async function createEntry(input: CreateSalaryInput, author: string | null = null) {
   const [entry] = await salaryRepo.create({
     date: input.date,
     employee: input.employee,
     amount: money(input.amount),
     comment: input.comment ?? "",
+    author,
   });
   return { entry };
 }
