@@ -151,7 +151,8 @@ export default function DolgiPage() {
   const [newPhone, setNewPhone] = useState("");
 
   // фильтр периода истории (по умолчанию — вся история)
-  const [histFrom, setHistFrom] = useState(() => `${new Date().getFullYear()}-01-01`);
+  // История клиента — за всё время (остаток накопительный, должен сходиться со списком).
+  const [histFrom, setHistFrom] = useState("");
   const [histTo, setHistTo] = useState("");
 
   // редактирование записи истории
