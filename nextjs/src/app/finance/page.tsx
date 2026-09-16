@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { notifyLive } from "@/lib/live/transport";
 import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
 
@@ -192,6 +193,7 @@ export default function FinancePage() {
   }, [ops]);
 
   async function reloadAll() {
+    notifyLive(); // другие вкладки/страницы сразу подхватят изменения финансов
     await Promise.all([loadAccounts(), loadOps(), loadFavs()]);
   }
 

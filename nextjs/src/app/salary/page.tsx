@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { notifyLive } from "@/lib/live/transport";
 import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
 import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
@@ -180,6 +181,7 @@ export default function SalaryPage() {
       setAmount("");
       setComment("");
       setStatus("Внесено ✓");
+      notifyLive(); // касса (ЗАРПЛАТА)/отчёты сразу подхватят
       selectedRef.current = employee;
       setSelected(employee);
       await Promise.all([loadReport(), loadHistory(employee)]);
@@ -209,6 +211,7 @@ export default function SalaryPage() {
     if (!res.ok) return setStatus("Ошибка изменения");
     setEditId(null);
     setStatus("Изменено ✓");
+    notifyLive();
     await loadReport();
     if (selectedRef.current) await loadHistory(selectedRef.current);
   }

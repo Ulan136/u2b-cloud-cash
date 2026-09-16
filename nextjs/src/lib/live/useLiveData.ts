@@ -35,10 +35,12 @@ export function useLiveData(
   const lastBgRef = useRef(0);
 
   const run = useCallback(async (background: boolean) => {
-    // схлопываем близкие фоновые перезапросы (focus + visibilitychange вместе)
+    // схлопываем только парные близкие сигналы (focus + visibilitychange
+    // приходят почти одновременно). Окно маленькое, чтобы не терять мгновенные
+    // notify() после сохранения на другой странице.
     if (background) {
       const now = Date.now();
-      if (now - lastBgRef.current < 3000) return;
+      if (now - lastBgRef.current < 600) return;
       lastBgRef.current = now;
       setRefreshing(true);
     }

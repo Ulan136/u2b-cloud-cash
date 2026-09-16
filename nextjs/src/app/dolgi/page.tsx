@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
 
 type Client = { id: number; name: string; phone: string | null };
@@ -375,6 +376,7 @@ export default function DolgiPage() {
       setComment("");
       setReturnDate("");
       setStatus("Записано ✓");
+      notifyLive(); // касса/отчёты сразу подхватят новый долг
       await Promise.all([loadAnalysis(), loadHistory(selected.id)]);
     } catch (e) {
       setStatus(e instanceof Error && e.message ? e.message : "Ошибка записи");
@@ -417,6 +419,7 @@ export default function DolgiPage() {
     if (!res.ok) return setStatus("Ошибка изменения");
     setEditId(null);
     setStatus("Изменено ✓");
+    notifyLive();
     if (selected) await Promise.all([loadAnalysis(), loadHistory(selected.id)]);
   }
 

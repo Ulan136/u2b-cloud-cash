@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
 import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
 
@@ -190,6 +191,7 @@ export default function KonsPage() {
       setRashod("");
       setComment("");
       setStatus("Внесено ✓");
+      notifyLive();
       selectedRef.current = supplier;
       setSelected(supplier);
       await Promise.all([loadAnalysis(), loadHistory(supplier)]);
@@ -226,6 +228,7 @@ export default function KonsPage() {
     if (!res.ok) return setStatus("Ошибка изменения");
     setEditId(null);
     setStatus("Изменено ✓");
+    notifyLive();
     if (selectedRef.current) await Promise.all([loadAnalysis(), loadHistory(selectedRef.current)]);
   }
 

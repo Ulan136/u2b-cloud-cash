@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
+import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
 
 const DAY_KEYS = [
@@ -318,6 +319,7 @@ export default function KassaPage() {
         setDirty(false);
         // Фиксируем показанное ОБЩ РЕАЛ, чтобы после автосейва оно не «прыгало».
         setStoredObshchReal(calc.obshchReal);
+        notifyLive(); // отчёты/другие вкладки сразу подхватят изменения кассы
         setStatus(
           action === "close"
             ? "Смена закрыта ✓"

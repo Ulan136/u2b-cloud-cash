@@ -30,12 +30,21 @@ export function computeMinPlus(obshchReal: number, klaud: number): number {
 
 // ── use-cases ──
 export async function getDay(date: string) {
-  const [day] = await cashDaysRepo.findByDate(date);
-  const expenses = await expensesRepo.findByDate(date);
-  const [totals] = await debtsRepo.dayTotals(date);
-  // Расход «ЗАРПЛАТА» кассы берём автоматически из журнала Зарплаты за этот день.
-  const [sal] = await salaryRepo.dayTotal(date);
-  return { day: day ?? null, expenses, totals, salaryDayTotal: Number(sal?.t ?? 0) };
+  // Все запросы параллельно (на serverless Neon каждый — отдельный round-trip,
+  // последовательно было заметно медленно). Расход «ЗАРПЛАТА» кассы берём
+  // автоматически из журнала Зарплаты за этот день.
+  const [dayRows, expenses, totalsRows, salRows] = await Promise.all([
+    cashDaysRepo.findByDate(date),
+    expensesRepo.findByDate(date),
+    debtsRepo.dayTotals(date),
+    salaryRepo.dayTotal(date),
+  ]);
+  return {
+    day: dayRows[0] ?? null,
+    expenses,
+    totals: totalsRows[0],
+    salaryDayTotal: Number(salRows[0]?.t ?? 0),
+  };
 }
 
 export async function saveDay(input: SaveDayInput, author: string | null = null) {
