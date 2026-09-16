@@ -61,7 +61,7 @@ function AmtBadge({ v, kind }: { v: number; kind: "debt" | "pay" }) {
   const debt = kind === "debt";
   return (
     <span
-      className="inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums"
+      className="inline-block rounded px-2 py-0.5 text-sm font-bold tabular-nums"
       style={
         debt
           ? { background: "#fdecec", color: "#c81e1e" }
@@ -99,7 +99,7 @@ export default function DolgiPage() {
   const [newPhone, setNewPhone] = useState("");
 
   // фильтр периода истории (по умолчанию — вся история)
-  const [histFrom, setHistFrom] = useState("");
+  const [histFrom, setHistFrom] = useState(() => `${new Date().getFullYear()}-01-01`);
   const [histTo, setHistTo] = useState("");
 
   // редактирование записи истории
@@ -474,26 +474,30 @@ export default function DolgiPage() {
                 </div>
               )}
 
-              {/* Суммы */}
+              {/* Суммы — ключевые поля: крупные, жирные, заметные ячейки */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="block">
-                  <span className="mb-1 block text-xs text-[#6b7280]">Долг (взял)</span>
+                  <span className="mb-1 block text-[13px] font-semibold text-[#374151]">
+                    Долг (взял)
+                  </span>
                   <input
                     inputMode="decimal"
                     value={debtAmount}
                     onChange={(e) => setDebtAmount(e.target.value)}
                     placeholder="0"
-                    className={input + " text-right tabular-nums"}
+                    className="w-full rounded-lg border-2 border-[#f0c9c9] bg-[#fdf3f3] px-3 py-2.5 text-right text-lg font-bold tabular-nums text-[#c81e1e] outline-none placeholder:text-[#d9a3a3] focus:border-[#c81e1e]"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-xs text-[#6b7280]">Оплата (вернул)</span>
+                  <span className="mb-1 block text-[13px] font-semibold text-[#374151]">
+                    Оплата (вернул)
+                  </span>
                   <input
                     inputMode="decimal"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="0"
-                    className={input + " text-right tabular-nums"}
+                    className="w-full rounded-lg border-2 border-[#c3e6d1] bg-[#f2fbf6] px-3 py-2.5 text-right text-lg font-bold tabular-nums text-[#047857] outline-none placeholder:text-[#9cc9ae] focus:border-[#047857]"
                   />
                 </label>
               </div>
@@ -539,7 +543,7 @@ export default function DolgiPage() {
               <div className={panel}>
                 <div className="mb-2 flex items-baseline justify-between">
                   <div>
-                    <div className="text-lg font-bold">{selected.name}</div>
+                    <div className="text-2xl font-extrabold text-[#1f2933]">{selected.name}</div>
                     {selectedPhone && (
                       <div className="text-xs text-[#9ca3af]">{selectedPhone}</div>
                     )}

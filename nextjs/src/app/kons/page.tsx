@@ -57,8 +57,8 @@ export default function KonsPage() {
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedRef = useRef<string | null>(null);
 
-  // фильтр периода истории (по умолчанию — вся история)
-  const [histFrom, setHistFrom] = useState("");
+  // фильтр периода истории (по умолчанию — текущий год)
+  const [histFrom, setHistFrom] = useState(() => `${new Date().getFullYear()}-01-01`);
   const [histTo, setHistTo] = useState("");
 
   // форма-строка

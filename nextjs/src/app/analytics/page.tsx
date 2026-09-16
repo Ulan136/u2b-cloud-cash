@@ -59,10 +59,10 @@ function yearRange() {
 const input = "rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 
 export default function AnalyticsPage() {
-  const initRange = useMemo(() => monthRange(), []);
+  const initRange = useMemo(() => yearRange(), []);
   const [from, setFrom] = useState(initRange.from);
   const [to, setTo] = useState(initRange.to);
-  const [preset, setPreset] = useState("month");
+  const [preset, setPreset] = useState("year");
   const [data, setData] = useState<Analytics | null>(null);
 
   const load = useCallback(async () => {

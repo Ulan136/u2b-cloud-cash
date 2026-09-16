@@ -75,10 +75,10 @@ export default function SalaryPage() {
   const [status, setStatus] = useState("");
 
   // период
-  const initRange = useMemo(() => monthRange(), []);
+  const initRange = useMemo(() => yearRange(), []);
   const [from, setFrom] = useState(initRange.from);
   const [to, setTo] = useState(initRange.to);
-  const [preset, setPreset] = useState("month");
+  const [preset, setPreset] = useState("year");
   const [search, setSearch] = useState("");
 
   const loadReport = useCallback(async () => {
