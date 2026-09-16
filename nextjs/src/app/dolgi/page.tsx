@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
 
@@ -319,6 +319,14 @@ export default function DolgiPage() {
     }
   }
 
+  // Enter в полях формы = кнопка «Записать» (без submit-перезагрузки и повторов).
+  function onEnterSave(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing && !saving) {
+      e.preventDefault();
+      save();
+    }
+  }
+
   function startEdit(h: HistoryRow) {
     setEditId(h.id);
     setEditDebt(num(h.debtAmount) ? String(num(h.debtAmount)) : "");
@@ -484,6 +492,7 @@ export default function DolgiPage() {
                     inputMode="decimal"
                     value={debtAmount}
                     onChange={(e) => setDebtAmount(e.target.value)}
+                    onKeyDown={onEnterSave}
                     placeholder="0"
                     className="w-full rounded-lg border-2 border-[#f0c9c9] bg-[#fdf3f3] px-3 py-2.5 text-right text-lg font-bold tabular-nums text-[#c81e1e] outline-none placeholder:text-[#d9a3a3] focus:border-[#c81e1e]"
                   />
@@ -496,6 +505,7 @@ export default function DolgiPage() {
                     inputMode="decimal"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
+                    onKeyDown={onEnterSave}
                     placeholder="0"
                     className="w-full rounded-lg border-2 border-[#c3e6d1] bg-[#f2fbf6] px-3 py-2.5 text-right text-lg font-bold tabular-nums text-[#047857] outline-none placeholder:text-[#9cc9ae] focus:border-[#047857]"
                   />
@@ -504,6 +514,7 @@ export default function DolgiPage() {
               <input
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
+                onKeyDown={onEnterSave}
                 placeholder="Комментарий"
                 className={input + " mt-2"}
               />
