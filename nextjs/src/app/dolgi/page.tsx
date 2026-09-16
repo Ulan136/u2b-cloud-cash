@@ -43,6 +43,48 @@ const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
 
+// ── Умный поиск клиента: терпит опечатки/пропуски ──
+const norm = (s: string) => s.toLowerCase().replace(/ё/g, "е").trim();
+function isSubseq(q: string, n: string) {
+  let i = 0;
+  for (let j = 0; j < n.length && i < q.length; j++) if (n[j] === q[i]) i++;
+  return i === q.length;
+}
+function lev(a: string, b: string) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+/** Оценка совпадения запроса с именем: >=0 совпало (больше=лучше), -1 нет. */
+function matchScore(query: string, name: string): number {
+  const q = norm(query), n = norm(name);
+  if (!q) return 0;
+  const idx = n.indexOf(q);
+  if (idx >= 0) return 1000 - idx; // подстрока — лучший вариант
+  if (isSubseq(q, n)) return 400 - (n.length - q.length); // буквы по порядку
+  const words = n.split(/\s+/).filter(Boolean);
+  const tol = q.length <= 3 ? 1 : q.length <= 6 ? 2 : 3;
+  let best = lev(q, n);
+  for (const w of words) best = Math.min(best, lev(q, w));
+  if (best <= tol) return 200 - best * 10; // опечатки по слову/строке
+  // скользящее окно с опечаткой: «блан» ~ «баглан»
+  for (const w of words) {
+    for (let s = 0; s + q.length <= w.length; s++) {
+      if (lev(q, w.slice(s, s + q.length)) <= tol) return 120 - best;
+    }
+  }
+  return -1;
+}
+
 /** Бейдж «предоплата» — синий, помечает осознанный уход остатка в минус. */
 function PrepayBadge() {
   return (
@@ -199,10 +241,21 @@ export default function DolgiPage() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
+  // Остаток по клиенту (для показа в списке) — из анализа остатков.
+  const ostatokById = useMemo(
+    () => new Map(balances.map((b) => [b.id, b.ostatok])),
+    [balances]
+  );
+
   const filteredClients = useMemo(() => {
-    const q = clientQuery.trim().toLowerCase();
-    const list = q ? clients.filter((c) => c.name.toLowerCase().includes(q)) : clients;
-    return list.slice(0, 30);
+    const q = clientQuery.trim();
+    if (!q) return clients.slice(0, 30);
+    return clients
+      .map((c) => ({ c, score: matchScore(q, c.name) }))
+      .filter((x) => x.score >= 0)
+      .sort((a, b) => b.score - a.score || a.c.name.localeCompare(b.c.name, "ru"))
+      .slice(0, 30)
+      .map((x) => x.c);
   }, [clients, clientQuery]);
 
   const selectedPhone = useMemo(
@@ -439,20 +492,35 @@ export default function DolgiPage() {
                 </div>
                 {menuOpen && filteredClients.length > 0 && (
                   <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-[#e5e7eb] bg-white shadow-xl">
-                    {filteredClients.map((c) => (
-                      <li key={c.id}>
-                        <button
-                          type="button"
-                          onClick={() => selectClient(c)}
-                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#f3f4f6]"
-                        >
-                          <span>{c.name}</span>
-                          {c.phone ? (
-                            <span className="text-xs text-[#9ca3af]">{c.phone}</span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
+                    {filteredClients.map((c) => {
+                      const ost = ostatokById.get(c.id) ?? 0;
+                      return (
+                        <li key={c.id}>
+                          <button
+                            type="button"
+                            onClick={() => selectClient(c)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[#f3f4f6]"
+                          >
+                            <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                            <span className="flex shrink-0 flex-col items-end leading-tight">
+                              {ost !== 0 && (
+                                <span
+                                  className={
+                                    "text-sm font-bold tabular-nums " +
+                                    (ost > 0 ? "text-[#c81e1e]" : "text-[#047857]")
+                                  }
+                                >
+                                  {fmt(ost)}
+                                </span>
+                              )}
+                              {c.phone && (
+                                <span className="text-[11px] text-[#9ca3af]">{c.phone}</span>
+                              )}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
