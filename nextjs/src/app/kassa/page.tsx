@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
 
@@ -137,6 +137,10 @@ export default function KassaPage() {
   // Пока день не редактируют — показываем его; при правках считаем формулой вживую.
   const [storedObshchReal, setStoredObshchReal] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
+  // Автосохранение: флажок «идёт», чтобы не запускать два сохранения сразу,
+  // и таймер debounce (сохраняем через паузу после последнего ввода).
+  const savingRef = useRef(false);
+  const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const archRange = useMemo(() => {
     const t = new Date();
@@ -258,14 +262,9 @@ export default function KassaPage() {
     return { debt, vozvratDolg, rashod, obshchReal, minPlus };
   }, [day, totals, expensesTotal, dirty, storedObshchReal]);
 
-  async function submit(action: "save" | "close" | "reopen") {
-    if (action === "close" && !window.confirm("Закрыть смену? День станет доступен только для просмотра."))
-      return;
-    if (action === "reopen" && !window.confirm("Переоткрыть смену для исправлений?")) return;
-    setSaving(true);
-    setStatus("");
-    try {
-      // Выражения-калькулятор превращаем в числа перед отправкой (в БД — numeric).
+  // Сформировать тело запроса из текущей формы (выражения → числа).
+  const buildBody = useCallback(
+    (action: "save" | "close" | "reopen") => {
       const dayEval = {
         klaudObshch: String(evalExpr(day.klaudObshch)),
         obshchReal: String(calc.obshchReal),
@@ -296,22 +295,68 @@ export default function KassaPage() {
         if (expr || cm) notes[k] = { ...(expr ? { expr } : {}), ...(cm ? { comment: cm } : {}) };
       }
       const fieldNotes = Object.keys(notes).length ? JSON.stringify(notes) : "";
-      const res = await fetch("/api/kassa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day: dayEval, expenses, fieldNotes, action }),
-      });
-      if (!res.ok) throw new Error();
-      setStatus(
-        action === "close" ? "Смена закрыта ✓" : action === "reopen" ? "Смена переоткрыта" : "Сохранено ✓"
-      );
-      await load({ background: false });
-    } catch {
-      setStatus("Ошибка");
-    } finally {
-      setSaving(false);
-    }
+      return { date, day: dayEval, expenses, fieldNotes, action };
+    },
+    [date, day, exp, displayCats, dayComments, salaryDayTotal, calc.obshchReal]
+  );
+
+  // Единая запись в БД. silent=true — тихое автосохранение (без перезагрузки формы,
+  // чтобы не сбить набор текста); иначе — ручное сохранение/закрытие с перезагрузкой.
+  const persist = useCallback(
+    async (action: "save" | "close" | "reopen", opts: { silent: boolean }) => {
+      if (savingRef.current) return;
+      savingRef.current = true;
+      if (!opts.silent) setSaving(true);
+      setStatus(opts.silent ? "сохранение…" : "");
+      try {
+        const res = await fetch("/api/kassa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(action)),
+        });
+        if (!res.ok) throw new Error();
+        setDirty(false);
+        // Фиксируем показанное ОБЩ РЕАЛ, чтобы после автосейва оно не «прыгало».
+        setStoredObshchReal(calc.obshchReal);
+        setStatus(
+          action === "close"
+            ? "Смена закрыта ✓"
+            : action === "reopen"
+              ? "Смена переоткрыта"
+              : "Сохранено ✓"
+        );
+        // Ручные действия перезагружают день; автосохранение — нет.
+        if (!opts.silent) await load({ background: false });
+      } catch {
+        setStatus("Ошибка сохранения — проверьте связь");
+      } finally {
+        savingRef.current = false;
+        if (!opts.silent) setSaving(false);
+      }
+    },
+    [buildBody, load, calc.obshchReal]
+  );
+
+  async function submit(action: "save" | "close" | "reopen") {
+    if (action === "close" && !window.confirm("Закрыть смену? День станет доступен только для просмотра."))
+      return;
+    if (action === "reopen" && !window.confirm("Переоткрыть смену для исправлений?")) return;
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    await persist(action, { silent: false });
   }
+
+  // Автосохранение: через 1.5 с после последнего изменения тихо пишем день в БД,
+  // чтобы введённые данные не терялись, даже если не нажать «Сохранить».
+  useEffect(() => {
+    if (!dirty || closed || loading) return;
+    if (autoTimer.current) clearTimeout(autoTimer.current);
+    autoTimer.current = setTimeout(() => {
+      persist("save", { silent: true });
+    }, 1500);
+    return () => {
+      if (autoTimer.current) clearTimeout(autoTimer.current);
+    };
+  }, [dirty, day, exp, dayComments, closed, loading, persist]);
 
   const setDayComment = (key: DayKey, v: string) => {
     setDirty(true);
@@ -554,6 +599,11 @@ export default function KassaPage() {
               ЗАКРЫТЬ СМЕНУ
             </button>
           </div>
+        )}
+        {!closed && (
+          <p className="mt-2 text-center text-xs text-[#6b7280]">
+            💾 Данные сохраняются автоматически — можно не нажимать «Сохранить»
+          </p>
         )}
 
         {/* Архив дней */}
