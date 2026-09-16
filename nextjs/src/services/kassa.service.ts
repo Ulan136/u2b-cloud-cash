@@ -104,9 +104,29 @@ export async function autoCloseToday(today: string) {
     return { status: "already-closed", date: today };
   }
   const now = new Date();
+  // Замораживаем ОБЩ РЕАЛ = live-формула на момент закрытия (а не старое
+  // значение из БД), чтобы закрытый день совпадал с расчётом по полям.
+  const [expenses, totalsRows] = await Promise.all([
+    expensesRepo.findByDate(today),
+    debtsRepo.dayTotals(today),
+  ]);
+  const rashod = expenses.reduce((s, e) => s + num(e.amount), 0);
+  const dd = totalsRows[0] ?? { debt: 0, payment: 0 };
+  const obshchReal = computeObshchReal({
+    nal: num(existing?.nalichnye),
+    kas: num(existing?.kaspi),
+    hal: num(existing?.halyk),
+    rashod,
+    zakup: num(existing?.zakupTovar),
+    inkas: num(existing?.inkasNalichka),
+    debt: num(dd.debt),
+    vozvrat: num(existing?.vozvrat),
+    vozvratDolg: num(dd.payment),
+  });
+  const frozen = String(Math.round(obshchReal * 100) / 100);
   await cashDaysRepo.upsert(
-    { date: today, closed: true, closedAt: now, closedBy: "auto" },
-    { closed: true, closedAt: now, closedBy: "auto" }
+    { date: today, closed: true, closedAt: now, closedBy: "auto", obshchReal: frozen },
+    { closed: true, closedAt: now, closedBy: "auto", obshchReal: frozen }
   );
   return { status: existing ? "closed" : "created-closed", date: today };
 }
@@ -136,7 +156,7 @@ export async function listRecentDays(from: string, to: string) {
       const klaud = num(day.klaudObshch);
       const dd = debtByDate.get(day.date) ?? { debt: 0, payment: 0 };
       const obshchReal =
-        day.obshchReal != null
+        day.closed && day.obshchReal != null
           ? num(day.obshchReal)
           : computeObshchReal({
               nal: num(day.nalichnye),

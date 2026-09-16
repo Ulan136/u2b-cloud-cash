@@ -64,7 +64,7 @@ export async function getReport(from: string, to: string) {
     const dd = debtsByDate.get(day.date) ?? { debt: 0, payment: 0 };
 
     const obshchReal =
-      day.obshchReal != null
+      day.closed && day.obshchReal != null
         ? num(day.obshchReal)
         : computeObshchReal({
             nal,
@@ -186,7 +186,7 @@ export async function getYear(year: number) {
     const hal = num(day.halyk);
     const dd = debtsByDate.get(day.date) ?? { debt: 0, payment: 0 };
     const obshchReal =
-      day.obshchReal != null
+      day.closed && day.obshchReal != null
         ? num(day.obshchReal)
         : computeObshchReal({
             nal,

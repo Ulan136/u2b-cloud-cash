@@ -256,12 +256,14 @@ export default function KassaPage() {
     const rashod = expensesTotal;
     const computed =
       nal + kas + hal + (rashod + zakup + inkas + debt + vozvrat) - vozvratDolg;
-    // Пока день не редактируют и есть зафиксированное значение — показываем его.
+    // Замороженное значение используем ТОЛЬКО для закрытого дня (импорт/прошлое —
+    // там пересчёт по таблице долгов не совпал бы). Открытый (текущий) день всегда
+    // считаем вживую по формуле — как в Google-таблице, автоматом в течение дня.
     const obshchReal =
-      !dirty && storedObshchReal != null ? storedObshchReal : Math.round(computed * 100) / 100;
+      closed && storedObshchReal != null ? storedObshchReal : Math.round(computed * 100) / 100;
     const minPlus = Math.round((obshchReal - klaud) * 100) / 100;
     return { debt, vozvratDolg, rashod, obshchReal, minPlus };
-  }, [day, totals, expensesTotal, dirty, storedObshchReal]);
+  }, [day, totals, expensesTotal, closed, storedObshchReal]);
 
   // Сформировать тело запроса из текущей формы (выражения → числа).
   const buildBody = useCallback(
