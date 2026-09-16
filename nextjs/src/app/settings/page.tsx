@@ -206,7 +206,7 @@ function DirectoryTab({
                     <td className="px-3 py-1.5 text-right tabular-nums text-[#9ca3af]">{row.opsCount}</td>
                     {withHidden && <td />}
                     <td className="px-3 py-1.5 text-right whitespace-nowrap">
-                      <button type="button" onClick={saveEdit} className="mr-2 text-[#27ae60]">✓</button>
+                      <button type="button" onClick={saveEdit} className="mr-2 text-[#047857]">✓</button>
                       <button type="button" onClick={() => setEditId(null)} className="text-[#9ca3af]">✕</button>
                     </td>
                   </>
@@ -372,7 +372,7 @@ function AccountsTab() {
                       <td className="px-2 py-1.5"><input value={eIcon} onChange={(e) => setEIcon(e.target.value)} maxLength={4} className="w-14 rounded bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-center text-sm" /></td>
                       <td className="px-3 py-1.5 text-right tabular-nums">{fmt(a.balance)}</td>
                       <td className="px-3 py-1.5 text-right whitespace-nowrap">
-                        <button type="button" onClick={saveEdit} className="mr-2 text-[#27ae60]">✓</button>
+                        <button type="button" onClick={saveEdit} className="mr-2 text-[#047857]">✓</button>
                         <button type="button" onClick={() => setEditId(null)} className="text-[#9ca3af]">✕</button>
                       </td>
                     </>
@@ -479,7 +479,7 @@ function ShiftTab() {
         </div>
       </label>
 
-      {status && <p className="text-xs text-[#27ae60]">{status}</p>}
+      {status && <p className="text-xs text-[#047857]">{status}</p>}
     </div>
   );
 }
@@ -551,7 +551,7 @@ function SecurityTab() {
         {saving ? "…" : "Сохранить"}
       </button>
 
-      {status && <p className="text-xs text-[#27ae60]">{status}</p>}
+      {status && <p className="text-xs text-[#047857]">{status}</p>}
     </div>
   );
 }

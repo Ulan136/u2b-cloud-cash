@@ -21,7 +21,7 @@ type Dashboard = {
 };
 
 const fmt = (n: number) => n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
-const diffColor = (n: number) => (n < 0 ? "text-[#eb5757]" : n > 0 ? "text-[#f2994a]" : "text-[#27ae60]");
+const diffColor = (n: number) => (n < 0 ? "text-[#c81e1e]" : n > 0 ? "text-[#c2410c]" : "text-[#047857]");
 
 function fmtLocal(d: Date) {
   const y = d.getFullYear();
@@ -100,7 +100,7 @@ export default function DashboardPage() {
           </Link>
           <Link href="/kassa" className={card + " text-center"}>
             <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">Смена</div>
-            <div className={"mt-1 text-lg font-extrabold " + (data?.shift.closed ? "text-[#eb5757]" : "text-[#27ae60]")}>
+            <div className={"mt-1 text-lg font-extrabold " + (data?.shift.closed ? "text-[#c81e1e]" : "text-[#047857]")}>
               {shiftLabel}
             </div>
             {data?.shift.closed && (
@@ -113,14 +113,14 @@ export default function DashboardPage() {
         <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Link href="/dolgi" className={card}>
             <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">Долги клиентов (остаток)</div>
-            <div className="mt-1 text-2xl font-extrabold tabular-nums text-[#eb5757]">{fmt(data?.debts.grandOstatok ?? 0)}</div>
+            <div className="mt-1 text-2xl font-extrabold tabular-nums text-[#c81e1e]">{fmt(data?.debts.grandOstatok ?? 0)}</div>
           </Link>
           <Link href="/dolgi" className={card}>
             <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">Долг / оплата сегодня</div>
             <div className="mt-1 text-lg font-extrabold tabular-nums">
-              <span className="text-[#eb5757]">{fmt(data?.debts.todayIssued ?? 0)}</span>
+              <span className="text-[#c81e1e]">{fmt(data?.debts.todayIssued ?? 0)}</span>
               <span className="text-[#9ca3af]"> / </span>
-              <span className="text-[#27ae60]">{fmt(data?.debts.todayReceived ?? 0)}</span>
+              <span className="text-[#047857]">{fmt(data?.debts.todayReceived ?? 0)}</span>
             </div>
           </Link>
           <Link href="/kons" className={card}>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
           </Link>
           <Link href="/salary" className={card}>
             <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">ЗП за сегодня</div>
-            <div className="mt-1 text-2xl font-extrabold tabular-nums text-[#27ae60]">{fmt(data?.salaryToday ?? 0)}</div>
+            <div className="mt-1 text-2xl font-extrabold tabular-nums text-[#047857]">{fmt(data?.salaryToday ?? 0)}</div>
           </Link>
         </div>
 
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                   <span
                     className={
                       "w-24 shrink-0 text-right font-semibold tabular-nums " +
-                      (o.tone === "in" ? "text-[#27ae60]" : o.tone === "transfer" ? "text-[#2f80ed]" : "text-[#eb5757]")
+                      (o.tone === "in" ? "text-[#047857]" : o.tone === "transfer" ? "text-[#2f80ed]" : "text-[#c81e1e]")
                     }
                   >
                     {o.tone === "in" ? "+" : o.tone === "out" ? "−" : ""}

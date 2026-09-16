@@ -297,7 +297,7 @@ export default function SalaryPage() {
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="text-[11px] text-[#27ae60] underline"
+                    className="text-[11px] text-[#047857] underline"
                   >
                     ← весь журнал
                   </button>
@@ -361,13 +361,13 @@ export default function SalaryPage() {
                                     <input value={editComment} onChange={(e) => setEditComment(e.target.value)} placeholder="Комментарий" className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1" />
                                   </td>
                                   <td className="px-1 py-1.5 text-right whitespace-nowrap">
-                                    <button type="button" onClick={saveEdit} className="font-bold text-[#0e9f4f] hover:opacity-80" aria-label="Сохранить">✓</button>
-                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]" aria-label="Отмена">✕</button>
+                                    <button type="button" onClick={saveEdit} className="font-bold text-[#047857] hover:opacity-80" aria-label="Сохранить">✓</button>
+                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#c81e1e]" aria-label="Отмена">✕</button>
                                   </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
+                                  <td className="px-2 py-1.5 text-right font-semibold text-[#047857]">
                                     {money(selected ?? "", num(h.amount))}
                                   </td>
                                   <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
@@ -385,7 +385,7 @@ export default function SalaryPage() {
                             <tr key={e.id} className="border-t border-[#e5e7eb]">
                               <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
                               <td className="px-2 py-1.5 text-left">
-                                <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#27ae60]">
+                                <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#047857]">
                                   {e.employee}
                                 </button>
                               </td>
@@ -398,13 +398,13 @@ export default function SalaryPage() {
                                     <input value={editComment} onChange={(ev) => setEditComment(ev.target.value)} placeholder="Комментарий" className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1" />
                                   </td>
                                   <td className="px-1 py-1.5 text-right whitespace-nowrap">
-                                    <button type="button" onClick={saveEdit} className="font-bold text-[#0e9f4f] hover:opacity-80" aria-label="Сохранить">✓</button>
-                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]" aria-label="Отмена">✕</button>
+                                    <button type="button" onClick={saveEdit} className="font-bold text-[#047857] hover:opacity-80" aria-label="Сохранить">✓</button>
+                                    <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#c81e1e]" aria-label="Отмена">✕</button>
                                   </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-2 py-1.5 text-right font-semibold text-[#27ae60]">
+                                  <td className="px-2 py-1.5 text-right font-semibold text-[#047857]">
                                     {money(e.employee, num(e.amount))}
                                   </td>
                                   <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
@@ -437,7 +437,7 @@ export default function SalaryPage() {
                 <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                   Зарплата за период
                 </div>
-                <div className="text-2xl font-extrabold tabular-nums text-[#27ae60]">
+                <div className="text-2xl font-extrabold tabular-nums text-[#047857]">
                   {fmt(totalPeriod)}
                 </div>
               </div>
@@ -471,7 +471,7 @@ export default function SalaryPage() {
                   <span
                     className={
                       "ml-2 shrink-0 tabular-nums font-semibold " +
-                      (r.total > 0 ? "text-[#27ae60]" : "text-[#b0b6bf]")
+                      (r.total > 0 ? "text-[#047857]" : "text-[#b0b6bf]")
                     }
                   >
                     {money(r.employee, r.total)}

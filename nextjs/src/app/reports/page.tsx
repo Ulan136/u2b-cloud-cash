@@ -49,7 +49,7 @@ const MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "И�
 
 const fmt = (n: number) => n.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
 const diffColor = (n: number) =>
-  n < 0 ? "text-[#eb5757]" : n > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
+  n < 0 ? "text-[#c81e1e]" : n > 0 ? "text-[#c2410c]" : "text-[#047857]";
 
 export default function ReportsPage() {
   const now = useMemo(() => new Date(), []);

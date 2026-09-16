@@ -48,7 +48,7 @@ function PrepayBadge() {
   return (
     <span
       className="mr-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold align-middle"
-      style={{ background: "#e7eefe", color: "#2f6fe0" }}
+      style={{ background: "#e7eefe", color: "#1d4ed8" }}
     >
       предоплата
     </span>
@@ -64,8 +64,8 @@ function AmtBadge({ v, kind }: { v: number; kind: "debt" | "pay" }) {
       className="inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums"
       style={
         debt
-          ? { background: "#fdecec", color: "#e02424" }
-          : { background: "#e7f6ee", color: "#0e9f4f" }
+          ? { background: "#fdecec", color: "#c81e1e" }
+          : { background: "#e7f6ee", color: "#047857" }
       }
     >
       {debt ? "+" : "−"}
@@ -415,7 +415,7 @@ export default function DolgiPage() {
                         type="button"
                         onClick={clearClient}
                         aria-label="Очистить"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#eb5757]"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#c81e1e]"
                       >
                         ✕
                       </button>
@@ -424,7 +424,7 @@ export default function DolgiPage() {
                   <button
                     type="button"
                     onClick={() => setShowNew((v) => !v)}
-                    className="shrink-0 rounded-lg border border-[#f2994a] px-3 text-sm font-semibold text-[#f2994a]"
+                    className="shrink-0 rounded-lg border border-[#f2994a] px-3 text-sm font-semibold text-[#c2410c]"
                   >
                     + новый
                   </button>
@@ -550,9 +550,9 @@ export default function DolgiPage() {
                       className={
                         "text-2xl font-extrabold tabular-nums " +
                         (clientOstatok > 0
-                          ? "text-[#e02424]"
+                          ? "text-[#c81e1e]"
                           : clientOstatok < 0
-                            ? "text-[#0e9f4f]"
+                            ? "text-[#047857]"
                             : "text-[#374151]")
                       }
                     >
@@ -624,7 +624,7 @@ export default function DolgiPage() {
                                 <div
                                   className={
                                     "text-[10px] " +
-                                    (h.returnDate < today ? "text-[#e02424]" : "text-[#9ca3af]")
+                                    (h.returnDate < today ? "text-[#c81e1e]" : "text-[#9ca3af]")
                                   }
                                 >
                                   возврат {h.returnDate}
@@ -669,7 +669,7 @@ export default function DolgiPage() {
                                       e.stopPropagation();
                                       saveEdit();
                                     }}
-                                    className="font-bold text-[#0e9f4f] hover:opacity-80"
+                                    className="font-bold text-[#047857] hover:opacity-80"
                                     aria-label="Сохранить"
                                   >
                                     ✓
@@ -680,7 +680,7 @@ export default function DolgiPage() {
                                       e.stopPropagation();
                                       setEditId(null);
                                     }}
-                                    className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]"
+                                    className="ml-1.5 text-[#9ca3af] hover:text-[#c81e1e]"
                                     aria-label="Отмена"
                                   >
                                     ✕
@@ -848,7 +848,7 @@ export default function DolgiPage() {
                 Общий остаток (на руках у клиентов)
                 {search || statusFilter !== "all" ? " · по фильтру" : ""}
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-[#e02424]">
+              <div className="text-2xl font-extrabold tabular-nums text-[#c81e1e]">
                 {fmt(search || statusFilter !== "all" ? shownTotal : totalOstatok)}
               </div>
             </div>
@@ -939,9 +939,9 @@ export default function DolgiPage() {
                         className={
                           "px-3 py-2 text-right font-semibold " +
                           (b.ostatok > 0
-                            ? "text-[#e02424]"
+                            ? "text-[#c81e1e]"
                             : b.ostatok < 0
-                              ? "text-[#0e9f4f]"
+                              ? "text-[#047857]"
                               : "text-[#374151]")
                         }
                       >

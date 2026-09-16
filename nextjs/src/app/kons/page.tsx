@@ -35,8 +35,8 @@ function AmtBadge({ v, kind }: { v: number; kind: "prihod" | "rashod" }) {
       className="inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums"
       style={
         prihod
-          ? { background: "#fdecec", color: "#e02424" }
-          : { background: "#e7f6ee", color: "#0e9f4f" }
+          ? { background: "#fdecec", color: "#c81e1e" }
+          : { background: "#e7f6ee", color: "#047857" }
       }
     >
       {prihod ? "+" : "−"}
@@ -304,9 +304,9 @@ export default function KonsPage() {
                       className={
                         "text-2xl font-extrabold tabular-nums " +
                         (supplierOstatok > 0
-                          ? "text-[#e02424]"
+                          ? "text-[#c81e1e]"
                           : supplierOstatok < 0
-                            ? "text-[#0e9f4f]"
+                            ? "text-[#047857]"
                             : "text-[#374151]")
                       }
                     >
@@ -418,7 +418,7 @@ export default function KonsPage() {
                                       e.stopPropagation();
                                       saveEdit();
                                     }}
-                                    className="font-bold text-[#0e9f4f] hover:opacity-80"
+                                    className="font-bold text-[#047857] hover:opacity-80"
                                     aria-label="Сохранить"
                                   >
                                     ✓
@@ -429,7 +429,7 @@ export default function KonsPage() {
                                       e.stopPropagation();
                                       setEditId(null);
                                     }}
-                                    className="ml-1.5 text-[#9ca3af] hover:text-[#eb5757]"
+                                    className="ml-1.5 text-[#9ca3af] hover:text-[#c81e1e]"
                                     aria-label="Отмена"
                                   >
                                     ✕
@@ -487,7 +487,7 @@ export default function KonsPage() {
               <div className="text-[10px] uppercase tracking-wide text-[#6b7280]">
                 Общий остаток (сколько мы должны)
               </div>
-              <div className="text-2xl font-extrabold tabular-nums text-[#e02424]">
+              <div className="text-2xl font-extrabold tabular-nums text-[#c81e1e]">
                 {fmt(totalOstatok)}
               </div>
             </div>
@@ -525,7 +525,7 @@ export default function KonsPage() {
                       <td
                         className={
                           "px-3 py-2 text-right font-semibold " +
-                          (b.ostatok > 0 ? "text-[#e02424]" : b.ostatok < 0 ? "text-[#0e9f4f]" : "text-[#374151]")
+                          (b.ostatok > 0 ? "text-[#c81e1e]" : b.ostatok < 0 ? "text-[#047857]" : "text-[#374151]")
                         }
                       >
                         {fmt(b.ostatok)}

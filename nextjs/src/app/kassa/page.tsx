@@ -342,7 +342,7 @@ export default function KassaPage() {
   );
 
   const mp = calc.minPlus;
-  const mpColor = mp < 0 ? "text-[#eb5757]" : mp > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
+  const mpColor = mp < 0 ? "text-[#c81e1e]" : mp > 0 ? "text-[#c2410c]" : "text-[#047857]";
 
   return (
     <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-3 py-4">
@@ -368,7 +368,7 @@ export default function KassaPage() {
             className="flex-1 rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm"
           />
           {closed && (
-            <span className="shrink-0 rounded-lg border border-cyan-800 bg-cyan-950/40 px-3 py-2 text-xs font-semibold text-cyan-300">
+            <span className="shrink-0 rounded-lg border border-[#7dd3fc] bg-[#ecfeff] px-3 py-2 text-xs font-semibold text-[#155e75]">
               🔒 Смена закрыта
               {closedAt
                 ? ` в ${new Date(closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
@@ -448,7 +448,7 @@ export default function KassaPage() {
                       className={
                         "px-1 text-xs " +
                         (exp[cat]?.comment || openComments[cat]
-                          ? "text-[#27ae60]"
+                          ? "text-[#047857]"
                           : "text-[#b0b6bf] hover:text-[#374151]")
                       }
                     >
@@ -525,7 +525,7 @@ export default function KassaPage() {
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {archive.map((d) => {
-              const c = d.minPlus < 0 ? "text-[#eb5757]" : d.minPlus > 0 ? "text-[#f2994a]" : "text-[#27ae60]";
+              const c = d.minPlus < 0 ? "text-[#c81e1e]" : d.minPlus > 0 ? "text-[#c2410c]" : "text-[#047857]";
               return (
                 <button
                   key={d.date}

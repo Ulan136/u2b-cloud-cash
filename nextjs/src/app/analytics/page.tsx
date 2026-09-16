@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
               Расходы за период
             </div>
             <div className="overflow-hidden rounded-lg border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
-              <Row label="ЗАРПЛАТА С КИМБАЙ" value={zarplata + kimbay} strong accent="text-amber-300" bg="bg-amber-950/20" />
+              <Row label="ЗАРПЛАТА С КИМБАЙ" value={zarplata + kimbay} strong accent="text-[#111827]" bg="bg-[#eff6ff]" stripe />
               {CATEGORY_ROWS.map((cat) => {
                 const di = (data?.expensesByCategory ?? []).findIndex((c) => c.category === cat);
                 return (
@@ -166,11 +166,11 @@ export default function AnalyticsPage() {
               })}
               <Row label="ИТОГ без МЕГА" value={itogBezMega} strong accent="text-[#2f80ed]" bg="bg-[#eef4ff]" />
               <div className="h-1 bg-white" />
-              <Row label="Долг (за период)" value={data?.period.debtIssued ?? 0} accent="text-[#eb5757]" />
-              <Row label="Оплата (за период)" value={data?.period.debtReceived ?? 0} accent="text-[#27ae60]" />
+              <Row label="Долг (за период)" value={data?.period.debtIssued ?? 0} accent="text-[#c81e1e]" />
+              <Row label="Оплата (за период)" value={data?.period.debtReceived ?? 0} accent="text-[#047857]" />
               <div className="h-1 bg-white" />
-              <Row label="Общий конс (за всё время)" value={data?.grand.konsOstatok ?? 0} strong accent="text-violet-400" />
-              <Row label="Общий долг (за всё время)" value={data?.grand.clientsOstatok ?? 0} strong accent="text-[#eb5757]" />
+              <Row label="Общий конс (за всё время)" value={data?.grand.konsOstatok ?? 0} strong accent="text-[#6d28d9]" />
+              <Row label="Общий долг (за всё время)" value={data?.grand.clientsOstatok ?? 0} strong accent="text-[#c81e1e]" />
             </div>
           </section>
 
@@ -192,6 +192,7 @@ function Row({
   strong,
   accent,
   bg,
+  stripe,
   dot,
   muted,
 }: {
@@ -200,11 +201,18 @@ function Row({
   strong?: boolean;
   accent?: string;
   bg?: string;
+  stripe?: boolean;
   dot?: string;
   muted?: boolean;
 }) {
   return (
-    <div className={"flex h-9 items-center px-3 " + (bg ?? "")}>
+    <div
+      className={
+        "flex h-9 items-center px-3 " +
+        (stripe ? "border-l-4 border-[#2f80ed] " : "") +
+        (bg ?? "")
+      }
+    >
       <span className="flex flex-1 items-center gap-2 truncate text-[13px] text-[#374151]">
         {dot && <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: dot }} />}
         <span className={strong ? "font-bold text-[#1f2933]" : ""}>{label}</span>

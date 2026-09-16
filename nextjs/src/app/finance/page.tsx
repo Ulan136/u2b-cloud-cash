@@ -348,7 +348,7 @@ function AmountInput({
         className={input + " text-xl font-bold tabular-nums"}
       />
       {evaled !== null && (
-        <div className="mt-1 rounded-lg bg-[#eafaf0] px-3 py-1 text-sm font-semibold text-[#27ae60]">
+        <div className="mt-1 rounded-lg bg-[#eafaf0] px-3 py-1 text-sm font-semibold text-[#047857]">
           = {fmt(evaled)}
         </div>
       )}
@@ -432,8 +432,8 @@ function OpTab({
                 "flex-1 rounded-lg py-2 text-sm font-bold " +
                 (type === t
                   ? t === "Приход"
-                    ? "bg-[#f0f2f5] text-[#27ae60]"
-                    : "bg-[#f0f2f5] text-[#eb5757]"
+                    ? "bg-[#f0f2f5] text-[#047857]"
+                    : "bg-[#f0f2f5] text-[#c81e1e]"
                   : "text-[#6b7280]")
               }
             >
@@ -512,7 +512,7 @@ function OpRow({
   onSave?: (id: number, amount: number, comment: string) => Promise<boolean>;
 }) {
   const isTrf = op.type === "Перевод";
-  const color = isTrf ? "text-sky-400" : op.type === "Приход" ? "text-[#27ae60]" : "text-[#eb5757]";
+  const color = isTrf ? "text-[#1d4ed8]" : op.type === "Приход" ? "text-[#047857]" : "text-[#c81e1e]";
   const sign = isTrf ? "" : op.type === "Приход" ? "+" : "−";
 
   const [editing, setEditing] = useState(false);
@@ -570,7 +570,7 @@ function OpRow({
             <button
               type="button"
               onClick={commit}
-              className="rounded-lg border border-[#bfe6cf] bg-[#e7f6ee] px-2 py-1 font-bold text-[#0e9f4f]"
+              className="rounded-lg border border-[#bfe6cf] bg-[#e7f6ee] px-2 py-1 font-bold text-[#047857]"
               aria-label="Сохранить"
             >
               ✓
@@ -790,7 +790,7 @@ function FavTab({
                 <div className="truncate text-sm font-semibold">{f.name}</div>
                 <div className="text-[11px] text-[#9ca3af]">
                   {f.accountName} ·{" "}
-                  <span className={f.type === "Приход" ? "text-[#27ae60]" : "text-[#eb5757]"}>
+                  <span className={f.type === "Приход" ? "text-[#047857]" : "text-[#c81e1e]"}>
                     {f.type}
                   </span>{" "}
                   · <Amt>{fmtNum(f.amount)}</Amt> ₸
@@ -806,7 +806,7 @@ function FavTab({
               <button
                 type="button"
                 onClick={() => delFav(f.id)}
-                className="shrink-0 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-[#eb5757]"
+                className="shrink-0 rounded-lg bg-[#f3f4f6] border border-[#e5e7eb] px-2 py-1 text-[#c81e1e]"
               >
                 ✕
               </button>
@@ -839,8 +839,8 @@ function FavTab({
                 "flex-1 rounded-lg py-2 text-sm font-bold " +
                 (type === t
                   ? t === "Приход"
-                    ? "bg-[#f0f2f5] text-[#27ae60]"
-                    : "bg-[#f0f2f5] text-[#eb5757]"
+                    ? "bg-[#f0f2f5] text-[#047857]"
+                    : "bg-[#f0f2f5] text-[#c81e1e]"
                   : "text-[#6b7280]")
               }
             >
@@ -1268,15 +1268,15 @@ function RepTab({ accounts }: { accounts: Account[] }) {
                 <td className="px-3 py-2 text-left">
                   {r.account.icon} {r.account.name}
                 </td>
-                <td className="px-2 py-2 text-right text-[#27ae60]">+<Amt>{fmtNum(r.income)}</Amt></td>
-                <td className="px-2 py-2 text-right text-[#eb5757]">−<Amt>{fmtNum(r.expense)}</Amt></td>
+                <td className="px-2 py-2 text-right text-[#047857]">+<Amt>{fmtNum(r.income)}</Amt></td>
+                <td className="px-2 py-2 text-right text-[#c81e1e]">−<Amt>{fmtNum(r.expense)}</Amt></td>
                 <td className="px-3 py-2 text-right font-semibold"><Amt>{fmtNum(r.account.balance)}</Amt></td>
               </tr>
             ))}
             <tr className="border-t border-[#e5e7eb] bg-white font-bold">
               <td className="px-3 py-2 text-left">Итого</td>
-              <td className="px-2 py-2 text-right text-[#27ae60]">+<Amt>{fmtNum(totals.income)}</Amt></td>
-              <td className="px-2 py-2 text-right text-[#eb5757]">−<Amt>{fmtNum(totals.expense)}</Amt></td>
+              <td className="px-2 py-2 text-right text-[#047857]">+<Amt>{fmtNum(totals.income)}</Amt></td>
+              <td className="px-2 py-2 text-right text-[#c81e1e]">−<Amt>{fmtNum(totals.expense)}</Amt></td>
               <td className="px-3 py-2 text-right"><Amt>{fmtNum(totalBalance)}</Amt></td>
             </tr>
           </tbody>

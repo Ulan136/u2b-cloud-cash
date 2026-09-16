@@ -96,7 +96,7 @@ export function DirectorySelect({
             onClear("");
           }}
           aria-label="Очистить"
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#eb5757]"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#c81e1e]"
         >
           ✕
         </button>
@@ -128,7 +128,7 @@ export function DirectorySelect({
                 setCreating(true);
                 setNewName(query.trim());
               }}
-              className="w-full border-t border-[#e5e7eb] px-3 py-2 text-left text-sm font-semibold text-[#f2994a] hover:bg-[#fdf1e7]"
+              className="w-full border-t border-[#e5e7eb] px-3 py-2 text-left text-sm font-semibold text-[#c2410c] hover:bg-[#fdf1e7]"
             >
               + Создать нового…
             </button>
