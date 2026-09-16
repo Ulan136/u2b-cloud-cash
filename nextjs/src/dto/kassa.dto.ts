@@ -21,6 +21,8 @@ export const saveDaySchema = z.object({
       comment: z.string().optional().default(""),
     })
   ),
+  // Заметки по полям кассы (уже JSON-строка): { nalichnye: {expr, comment}, ... }
+  fieldNotes: z.string().optional(),
   action: z.enum(["save", "close", "reopen"]).optional().default("save"),
 });
 export type SaveDayInput = z.infer<typeof saveDaySchema>;

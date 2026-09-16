@@ -120,6 +120,9 @@ export default function KassaPage() {
   });
   const [extraCats, setExtraCats] = useState<string[]>([]);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+  // Комментарии к полям кассы (Наличные/КАС/ХАЛ и т.д.) + какие раскрыты
+  const [dayComments, setDayComments] = useState<Record<string, string>>({});
+  const [openDayComments, setOpenDayComments] = useState<Record<string, boolean>>({});
   const [totals, setTotals] = useState({ debt: "0", payment: "0" });
   const [archive, setArchive] = useState<ArchiveDay[]>([]);
   const [loading, setLoading] = useState(false);
@@ -174,20 +177,32 @@ export default function KassaPage() {
             data.day?.obshchReal != null ? Number(data.day.obshchReal) : null
           );
           setDirty(false);
+          // Заметки по полям: expr (для показа «из чего сумма») + комментарий.
+          let notes: Record<string, { expr?: string; comment?: string }> = {};
+          try {
+            notes = data.day?.fieldNotes ? JSON.parse(data.day.fieldNotes) : {};
+          } catch {
+            notes = {};
+          }
+          const val = (key: DayKey, raw: unknown) => notes[key]?.expr ?? s(raw);
           setDay(
             data.day
               ? {
-                  klaudObshch: s(data.day.klaudObshch),
-                  nalichnye: s(data.day.nalichnye),
-                  kaspi: s(data.day.kaspi),
-                  halyk: s(data.day.halyk),
-                  inkasNalichka: s(data.day.inkasNalichka),
-                  vozvrat: s(data.day.vozvrat),
-                  zakupTovar: s(data.day.zakupTovar),
+                  klaudObshch: val("klaudObshch", data.day.klaudObshch),
+                  nalichnye: val("nalichnye", data.day.nalichnye),
+                  kaspi: val("kaspi", data.day.kaspi),
+                  halyk: val("halyk", data.day.halyk),
+                  inkasNalichka: val("inkasNalichka", data.day.inkasNalichka),
+                  vozvrat: val("vozvrat", data.day.vozvrat),
+                  zakupTovar: val("zakupTovar", data.day.zakupTovar),
                   comment: s(data.day.comment),
                 }
               : emptyDay()
           );
+          const dc: Record<string, string> = {};
+          for (const k of DAY_KEYS) if (notes[k]?.comment) dc[k] = String(notes[k]!.comment);
+          setDayComments(dc);
+          setOpenDayComments({});
           const map: Exp = {};
           for (const c of CATEGORIES) map[c] = { amount: "", comment: "" };
           const extras: string[] = [];
@@ -282,10 +297,18 @@ export default function KassaPage() {
       if (salaryDayTotal !== 0) {
         expenses.push({ category: "ЗАРПЛАТА", amount: String(salaryDayTotal), comment: "" });
       }
+      // Заметки по полям: выражение ввода (для «из чего сумма») + комментарий.
+      const notes: Record<string, { expr?: string; comment?: string }> = {};
+      for (const k of DAY_KEYS) {
+        const expr = hasExpr(day[k]) ? day[k] : undefined;
+        const cm = dayComments[k]?.trim() || undefined;
+        if (expr || cm) notes[k] = { ...(expr ? { expr } : {}), ...(cm ? { comment: cm } : {}) };
+      }
+      const fieldNotes = Object.keys(notes).length ? JSON.stringify(notes) : "";
       const res = await fetch("/api/kassa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, day: dayEval, expenses, action }),
+        body: JSON.stringify({ date, day: dayEval, expenses, fieldNotes, action }),
       });
       if (!res.ok) throw new Error();
       setStatus(
@@ -299,32 +322,60 @@ export default function KassaPage() {
     }
   }
 
+  const setDayComment = (key: DayKey, v: string) => {
+    setDirty(true);
+    setDayComments((m) => ({ ...m, [key]: v }));
+  };
+
   const inputRow = (key: DayKey, label: string) => {
     const expr = hasExpr(day[key]);
+    const hasComment = !!dayComments[key];
     return (
-      <div
-        className="flex h-10 items-center border-l-4"
-        style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
-      >
-        <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">{label}</span>
-        {expr && !closed && (
+      <div>
+        <div
+          className="flex h-12 items-center border-l-4"
+          style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
+        >
+          <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">{label}</span>
+          {expr && !closed && (
+            <button
+              type="button"
+              onClick={() => collapseField(key)}
+              title="Свернуть в сумму — потом можно добавлять дальше"
+              className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-xs font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+            >
+              ✎ ={fmt(evalExpr(day[key]))}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => collapseField(key)}
-            title="Свернуть в сумму — потом можно добавлять дальше"
-            className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-[11px] font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+            onClick={() => setOpenDayComments((o) => ({ ...o, [key]: !o[key] }))}
+            title="Комментарий"
+            className={
+              "px-1.5 text-base " +
+              (hasComment || openDayComments[key] ? "text-[#047857]" : "text-[#b0b6bf] hover:text-[#374151]")
+            }
           >
-            ✎ ={fmt(evalExpr(day[key]))}
+            💬
           </button>
+          <input
+            inputMode="text"
+            value={day[key]}
+            onChange={(e) => setField(key, e.target.value)}
+            placeholder="0"
+            disabled={closed}
+            className="h-full w-44 bg-transparent pr-4 text-right text-lg font-semibold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
+          />
+        </div>
+        {openDayComments[key] && (
+          <input
+            value={dayComments[key] ?? ""}
+            onChange={(e) => setDayComment(key, e.target.value)}
+            placeholder="комментарий — из чего сумма и т.п."
+            disabled={closed}
+            className="w-full bg-white px-4 py-2 text-sm outline-none disabled:opacity-60"
+          />
         )}
-        <input
-          inputMode="text"
-          value={day[key]}
-          onChange={(e) => setField(key, e.target.value)}
-          placeholder="0"
-          disabled={closed}
-          className="h-full w-32 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
-        />
       </div>
     );
   };
@@ -332,12 +383,12 @@ export default function KassaPage() {
   const autoRow = (label: string, value: number, highlight = false) => (
     <div
       className={
-        "flex h-10 items-center border-l-4 border-transparent " +
+        "flex h-12 items-center border-l-4 border-transparent " +
         (highlight ? "bg-[#f3f4f6]" : "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]")
       }
     >
-      <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#6b7280]">{label}</span>
-      <span className="w-32 pr-3 text-right text-sm font-semibold tabular-nums">{fmt(value)}</span>
+      <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#6b7280]">{label}</span>
+      <span className="w-44 pr-4 text-right text-base font-semibold tabular-nums">{fmt(value)}</span>
     </div>
   );
 
@@ -345,10 +396,10 @@ export default function KassaPage() {
   const mpColor = mp < 0 ? "text-[#c81e1e]" : mp > 0 ? "text-[#c2410c]" : "text-[#047857]";
 
   return (
-    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-3 py-4">
-      <div className="mx-auto w-full max-w-4xl">
+    <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933] px-4 py-5">
+      <div className="mx-auto w-full max-w-6xl">
         <header className="mb-3 flex items-center gap-2">
-          <h1 className="text-xl font-bold">Касса</h1>
+          <h1 className="text-2xl font-bold">Касса</h1>
           <span className="ml-auto flex items-center gap-2 text-xs text-[#9ca3af]">
             {status && <span>{status}</span>}
             {loading ? (
@@ -393,9 +444,9 @@ export default function KassaPage() {
             {autoRow("Расход", calc.rashod)}
             {inputRow("zakupTovar", "закуп товар")}
             {autoRow("Возврат долг", calc.vozvratDolg)}
-            <div className="flex h-14 items-center border-l-4 border-transparent bg-[#eaf1fd]">
-              <span className="flex-1 pl-3 pr-2 text-sm font-bold text-[#1f2933]">МИН/ПЛЮС</span>
-              <span className={"w-36 pr-3 text-right text-2xl font-extrabold tabular-nums " + mpColor}>
+            <div className="flex h-16 items-center border-l-4 border-transparent bg-[#eaf1fd]">
+              <span className="flex-1 pl-4 pr-2 text-lg font-bold text-[#1f2933]">МИН/ПЛЮС</span>
+              <span className={"w-52 pr-4 text-right text-3xl font-extrabold tabular-nums " + mpColor}>
                 {mp > 0 ? "+" : ""}
                 {fmt(mp)}
               </span>
@@ -405,28 +456,28 @@ export default function KassaPage() {
           {/* ПРАВАЯ — расходы фиксированным списком */}
           <div>
             <div className="mb-1 flex items-center justify-between px-1">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+              <span className="text-sm font-semibold uppercase tracking-wide text-[#6b7280]">
                 Расходы дня
               </span>
-              <span className="text-xs tabular-nums text-[#374151]">Σ {fmt(expensesTotal)}</span>
+              <span className="text-sm tabular-nums text-[#374151]">Σ {fmt(expensesTotal)}</span>
             </div>
             <div className="overflow-hidden rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
               {/* ЗАРПЛАТА — авто из журнала Зарплаты за день, только для просмотра */}
-              <div className="flex h-10 items-center" style={{ background: "#eef7ff" }}>
-                <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">
-                  ЗАРПЛАТА <span className="text-[10px] text-[#9ca3af]">· из журнала</span>
+              <div className="flex h-12 items-center" style={{ background: "#eef7ff" }}>
+                <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">
+                  ЗАРПЛАТА <span className="text-[11px] text-[#9ca3af]">· из журнала</span>
                 </span>
-                <span className="w-28 pr-3 text-right text-sm font-semibold tabular-nums text-[#374151]">
+                <span className="w-36 pr-4 text-right text-base font-semibold tabular-nums text-[#374151]">
                   {fmt(salaryDayTotal)}
                 </span>
               </div>
               {displayCats.map((cat) => (
                 <div key={cat}>
                   <div
-                    className="flex h-10 items-center"
+                    className="flex h-12 items-center"
                     style={{ background: "#f2f7ff" }}
                   >
-                    <span className="flex-1 truncate pl-3 pr-2 text-[13px] text-[#374151]">
+                    <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">
                       {cat}
                     </span>
                     {hasExpr(exp[cat]?.amount ?? "") && !closed && (
@@ -434,7 +485,7 @@ export default function KassaPage() {
                         type="button"
                         onClick={() => collapseExp(cat)}
                         title="Свернуть в сумму — потом можно добавлять дальше"
-                        className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-[11px] font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+                        className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-xs font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
                       >
                         ✎ ={fmt(evalExpr(exp[cat]?.amount ?? ""))}
                       </button>
@@ -446,7 +497,7 @@ export default function KassaPage() {
                       }
                       title="Комментарий"
                       className={
-                        "px-1 text-xs " +
+                        "px-1.5 text-base " +
                         (exp[cat]?.comment || openComments[cat]
                           ? "text-[#047857]"
                           : "text-[#b0b6bf] hover:text-[#374151]")
@@ -460,7 +511,7 @@ export default function KassaPage() {
                       onChange={(e) => updateExp(cat, { amount: e.target.value })}
                       placeholder="0"
                       disabled={closed}
-                      className="h-full w-28 bg-transparent pr-3 text-right text-sm tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
+                      className="h-full w-36 bg-transparent pr-4 text-right text-base font-semibold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
                     />
                   </div>
                   {openComments[cat] && (
@@ -469,7 +520,7 @@ export default function KassaPage() {
                       onChange={(e) => updateExp(cat, { comment: e.target.value })}
                       placeholder="комментарий"
                       disabled={closed}
-                      className="w-full bg-white px-3 py-1.5 text-xs outline-none disabled:opacity-60"
+                      className="w-full bg-white px-4 py-2 text-sm outline-none disabled:opacity-60"
                     />
                   )}
                 </div>

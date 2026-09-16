@@ -44,6 +44,7 @@ export async function saveDay(input: SaveDayInput, author: string | null = null)
   const base = {
     date,
     author,
+    fieldNotes: input.fieldNotes ?? null,
     klaudObshch: money(day.klaudObshch),
     // фиксируем ОБЩ РЕАЛ, если пришёл с клиента (иначе оставляем как есть — null → формула)
     ...(day.obshchReal != null && day.obshchReal !== ""

@@ -84,6 +84,9 @@ export const cashDays = pgTable("cash_days", {
   closedAt: timestamp("closed_at"),
   closedBy: text("closed_by"), // 'manual' | 'auto'
   author: text("author"), // менеджер, сохранивший день
+  // Заметки по полям кассы (JSON): { nalichnye: {expr, comment}, ... }
+  // expr — выражение ввода (напр. "20000+10000") для показа «из чего сумма»; comment — комментарий.
+  fieldNotes: text("field_notes"),
 });
 
 export const cashExpenses = pgTable("cash_expenses", {
