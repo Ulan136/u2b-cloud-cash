@@ -232,15 +232,6 @@ export default function KassaPage() {
     setDirty(true);
     setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), ...patch } }));
   };
-  // «Карандаш»: свернуть выражение (42000+20000) в его сумму (62000), чтобы дальше добавлять.
-  const collapseField = (key: DayKey) => {
-    setDirty(true);
-    setDay((d) => ({ ...d, [key]: String(evalExpr(d[key])) }));
-  };
-  const collapseExp = (cat: string) => {
-    setDirty(true);
-    setExp((m) => ({ ...m, [cat]: { ...(m[cat] ?? { amount: "", comment: "" }), amount: String(evalExpr(m[cat]?.amount ?? "")) } }));
-  };
 
   const expensesTotal = useMemo(
     () => salaryDayTotal + displayCats.reduce((s, c) => s + evalExpr(exp[c]?.amount ?? ""), 0),
@@ -337,15 +328,13 @@ export default function KassaPage() {
           style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
         >
           <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">{label}</span>
-          {expr && !closed && (
-            <button
-              type="button"
-              onClick={() => collapseField(key)}
-              title="Свернуть в сумму — потом можно добавлять дальше"
-              className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-xs font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+          {expr && (
+            <span
+              title="Сумма выражения (разбивка сохраняется)"
+              className="mr-1 shrink-0 whitespace-nowrap text-xs font-semibold text-[#2f80ed]"
             >
-              ✎ ={fmt(evalExpr(day[key]))}
-            </button>
+              = {fmt(evalExpr(day[key]))}
+            </span>
           )}
           <button
             type="button"
@@ -480,15 +469,13 @@ export default function KassaPage() {
                     <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">
                       {cat}
                     </span>
-                    {hasExpr(exp[cat]?.amount ?? "") && !closed && (
-                      <button
-                        type="button"
-                        onClick={() => collapseExp(cat)}
-                        title="Свернуть в сумму — потом можно добавлять дальше"
-                        className="mr-1 shrink-0 whitespace-nowrap rounded px-1 text-xs font-semibold text-[#2f80ed] hover:bg-[#eaf1fd]"
+                    {hasExpr(exp[cat]?.amount ?? "") && (
+                      <span
+                        title="Сумма выражения (разбивка сохраняется)"
+                        className="mr-1 shrink-0 whitespace-nowrap text-xs font-semibold text-[#2f80ed]"
                       >
-                        ✎ ={fmt(evalExpr(exp[cat]?.amount ?? ""))}
-                      </button>
+                        = {fmt(evalExpr(exp[cat]?.amount ?? ""))}
+                      </span>
                     )}
                     <button
                       type="button"
