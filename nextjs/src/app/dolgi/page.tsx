@@ -136,6 +136,12 @@ export default function DolgiPage() {
   const [history, setHistory] = useState<HistoryRow[] | null>(null);
   const selectedIdRef = useRef<number | null>(null);
 
+  // Онлайн-ссылка клиенту (публичный просмотр остатка и истории)
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
   // «История дня» — показывается, когда клиент не выбран
   const [dayDate, setDayDate] = useState(today);
   const [dayHistory, setDayHistory] = useState<DayRow[] | null>(null);
@@ -319,6 +325,41 @@ export default function DolgiPage() {
     clearSelection();
     setClientQuery("");
     setMenuOpen(false);
+  }
+
+  /** Открыть модалку «Онлайн-ссылка клиенту»: получить/создать токен и собрать ссылку. */
+  async function openShare() {
+    if (!selected) return;
+    setShareOpen(true);
+    setShareUrl("");
+    setShareCopied(false);
+    setShareBusy(true);
+    try {
+      const res = await fetch("/api/clients/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: selected.id }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.token) throw new Error();
+      setShareUrl(`${window.location.origin}/track/${d.token}`);
+    } catch {
+      setShareUrl("");
+      setStatus("Не удалось создать ссылку");
+      setShareOpen(false);
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
+  async function copyShare() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // буфер может быть недоступен — клиент скопирует вручную
+    }
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 1800);
   }
 
   async function createClient() {
@@ -657,6 +698,15 @@ export default function DolgiPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Онлайн-ссылка клиенту */}
+                <button
+                  type="button"
+                  onClick={openShare}
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[#6d5ae6] py-2.5 text-sm font-semibold text-white active:bg-[#5a49c9]"
+                >
+                  🔗 Ссылка клиенту
+                </button>
 
                 {/* Фильтр периода истории */}
                 <div className="mb-2 flex flex-wrap items-end gap-2">
@@ -1104,6 +1154,64 @@ export default function DolgiPage() {
                 Отмена
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка «Онлайн-ссылка на долг» */}
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-base font-bold text-[#1f2933]">Онлайн-ссылка на долг</div>
+              <button
+                type="button"
+                onClick={() => setShareOpen(false)}
+                className="rounded-lg bg-[#f1f4fa] px-2 py-1 text-sm text-[#6b7280]"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-[#6b7280]">
+              Клиент откроет ссылку и будет видеть свой остаток и историю онлайн — сумма
+              обновляется сама.
+            </p>
+
+            {shareBusy || !shareUrl ? (
+              <div className="mt-3 text-sm font-semibold text-[#9ca3af]">Создаём ссылку…</div>
+            ) : (
+              <>
+                <div className="mt-3 break-all rounded-xl border border-[#e5e7eb] bg-[#f7f9fe] px-3 py-3 text-[13px] font-semibold text-[#2f80ed]">
+                  {shareUrl}
+                </div>
+                <button
+                  type="button"
+                  onClick={copyShare}
+                  className="mt-2 w-full rounded-lg border border-[#e5e7eb] bg-white py-2.5 text-sm font-semibold text-[#2f80ed] active:bg-[#f3f4f6]"
+                >
+                  {shareCopied ? "✓ Скопировано" : "📋 Скопировать"}
+                </button>
+                <a
+                  href={
+                    (selectedPhone
+                      ? `https://wa.me/${selectedPhone.replace(/\D/g, "")}`
+                      : "https://wa.me/") +
+                    `?text=${encodeURIComponent(`Здравствуйте! Ваш долг и история онлайн: ${shareUrl}`)}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-2.5 text-sm font-semibold text-white active:opacity-90"
+                >
+                  💬 Отправить в WhatsApp
+                </a>
+              </>
+            )}
           </div>
         </div>
       )}

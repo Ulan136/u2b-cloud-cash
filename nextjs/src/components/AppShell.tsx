@@ -80,6 +80,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMe(null);
   }
 
+  // Публичная страница долга клиента (/track/<token>) — без меню и без входа.
+  if (pathname.startsWith("/track")) return <>{children}</>;
+
   // Гейт входа — если пользователи заведены, а на устройстве не выбран менеджер.
   const showGate = managersExist === true && !me;
   // Не-админ без доступных страниц.

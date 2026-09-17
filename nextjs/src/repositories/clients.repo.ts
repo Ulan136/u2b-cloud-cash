@@ -12,6 +12,14 @@ export function findById(id: number) {
   return db.select().from(clients).where(eq(clients.id, id));
 }
 
+export function findByShareToken(token: string) {
+  return db.select().from(clients).where(eq(clients.shareToken, token));
+}
+
+export function setShareToken(id: number, token: string) {
+  return db.update(clients).set({ shareToken: token }).where(eq(clients.id, id)).returning();
+}
+
 export function create(values: ClientValues) {
   return db.insert(clients).values(values).returning();
 }

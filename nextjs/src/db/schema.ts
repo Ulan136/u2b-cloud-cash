@@ -17,6 +17,9 @@ export const clients = pgTable("clients", {
   comment: text("comment"),
   archived: boolean("archived").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  // Публичный токен для онлайн-ссылки клиенту (он видит свой остаток и историю
+  // без авторизации по /track/<token>). Пусто, пока ссылку не создали.
+  shareToken: text("share_token").unique(),
 });
 
 export const firms = pgTable("firms", {
