@@ -41,6 +41,11 @@ function todayStr() {
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
+// Первое число текущего месяца — по умолчанию для фильтра истории клиента.
+function monthStartStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
 const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
 const panel = "rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-4";
@@ -159,8 +164,9 @@ export default function DolgiPage() {
 
   // фильтр периода истории (по умолчанию — вся история)
   // История клиента — за всё время (остаток накопительный, должен сходиться со списком).
-  const [histFrom, setHistFrom] = useState("");
-  const [histTo, setHistTo] = useState("");
+  // По умолчанию история клиента — текущий месяц (полная слишком длинная).
+  const [histFrom, setHistFrom] = useState(monthStartStr);
+  const [histTo, setHistTo] = useState(todayStr);
 
   // редактирование записи истории
   const [editId, setEditId] = useState<number | null>(null);
