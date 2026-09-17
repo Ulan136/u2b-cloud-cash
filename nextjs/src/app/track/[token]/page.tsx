@@ -12,12 +12,25 @@ const fmtDate = (d: string) => {
   const [y, m, day] = d.split("-");
   return day && m && y ? `${day}.${m}.${y}` : d;
 };
+const pad = (n: number) => String(n).padStart(2, "0");
+// Границы текущего месяца (по умолчанию для фильтра истории).
+const monthStart = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+};
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export default function TrackPage({ params }: { params: { token: string } }) {
   const { token } = params;
   const [data, setData] = useState<Track | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "error">("loading");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  // Фильтр истории по датам. По умолчанию — текущий месяц. Пусто = за всё время.
+  const [from, setFrom] = useState(monthStart);
+  const [to, setTo] = useState(todayStr);
 
   const load = useCallback(async () => {
     try {
@@ -44,6 +57,10 @@ export default function TrackPage({ params }: { params: { token: string } }) {
   }, [load]);
 
   const owes = (data?.ostatok ?? 0) > 0;
+  // История, отфильтрованная по выбранному периоду (остаток остаётся полным).
+  const shownEvents = (data?.events ?? []).filter(
+    (e) => (!from || e.date >= from) && (!to || e.date <= to)
+  );
 
   return (
     <main className="min-h-screen bg-[#f0f2f5] text-[#1f2933]">
@@ -91,14 +108,51 @@ export default function TrackPage({ params }: { params: { token: string } }) {
               )}
             </div>
 
-            <div className="mt-1 text-[13px] font-bold text-[#1f2933]">История</div>
+            <div className="mt-1 flex items-center justify-between">
+              <div className="text-[13px] font-bold text-[#1f2933]">История</div>
+              {(from || to) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFrom("");
+                    setTo("");
+                  }}
+                  className="text-[12px] font-semibold text-[#2f80ed] underline"
+                >
+                  за всё время
+                </button>
+              )}
+            </div>
+
+            {/* Фильтр по датам (по умолчанию — текущий месяц) */}
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col">
+                <span className="mb-1 text-[10px] text-[#9ca3af]">с</span>
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="rounded-lg border border-[#e5e7eb] bg-white px-2 py-1.5 text-xs"
+                />
+              </label>
+              <label className="flex flex-col">
+                <span className="mb-1 text-[10px] text-[#9ca3af]">по</span>
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="rounded-lg border border-[#e5e7eb] bg-white px-2 py-1.5 text-xs"
+                />
+              </label>
+            </div>
+
             <div className="flex flex-col gap-2">
-              {data.events.length === 0 && (
+              {shownEvents.length === 0 && (
                 <div className="rounded-xl bg-white p-4 text-center text-sm text-[#9ca3af] shadow-sm">
-                  Пока нет операций
+                  {data.events.length === 0 ? "Пока нет операций" : "Нет операций за период"}
                 </div>
               )}
-              {data.events.map((ev, i) => (
+              {shownEvents.map((ev, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm"
