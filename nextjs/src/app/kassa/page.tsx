@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { fmtDate } from "@/lib/date";
 
 const DAY_KEYS = [
   "klaudObshch",
@@ -630,7 +631,7 @@ export default function KassaPage() {
                       : "border-[#e5e7eb] bg-white")
                   }
                 >
-                  <div className="text-[11px] text-[#6b7280]">{d.date.slice(5)}</div>
+                  <div className="text-[11px] text-[#6b7280]">{fmtDate(d.date).slice(0, 5)}</div>
                   <div className={"text-sm font-bold tabular-nums " + c}>
                     {d.minPlus > 0 ? "+" : ""}
                     {fmt(d.minPlus)}

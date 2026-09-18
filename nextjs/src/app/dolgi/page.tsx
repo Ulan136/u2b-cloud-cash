@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 import { useLiveData } from "@/lib/live/useLiveData";
 import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { fmtDate } from "@/lib/date";
 
 type Client = { id: number; name: string; phone: string | null };
 type Balance = {
@@ -772,7 +773,7 @@ export default function DolgiPage() {
                             }
                           >
                             <td className="px-2 py-1.5 text-left align-top">
-                              <div className="text-[#374151]">{h.date}</div>
+                              <div className="text-[#374151]">{fmtDate(h.date)}</div>
                               {h.returnDate && (
                                 <div
                                   className={
@@ -780,7 +781,7 @@ export default function DolgiPage() {
                                     (h.returnDate < today ? "text-[#c81e1e]" : "text-[#9ca3af]")
                                   }
                                 >
-                                  возврат {h.returnDate}
+                                  возврат {fmtDate(h.returnDate)}
                                 </div>
                               )}
                             </td>

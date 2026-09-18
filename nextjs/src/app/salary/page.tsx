@@ -6,6 +6,7 @@ import { notifyLive } from "@/lib/live/transport";
 import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
 import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
+import { fmtDate } from "@/lib/date";
 
 type ByEmployee = { employee: string; total: number; count: number };
 type Entry = { id: number; date: string; employee: string; amount: string; comment: string | null };
@@ -375,7 +376,7 @@ export default function SalaryPage() {
                           const editing = editId === h.id;
                           return (
                             <tr key={h.id} className="border-t border-[#e5e7eb]">
-                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.date}</td>
+                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{fmtDate(h.date)}</td>
                               {editing ? (
                                 <>
                                   <td className="px-1 py-1.5 text-right">
@@ -408,7 +409,7 @@ export default function SalaryPage() {
                           const editing = editId === e.id;
                           return (
                             <tr key={e.id} className="border-t border-[#e5e7eb]">
-                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.date}</td>
+                              <td className="px-2 py-1.5 text-left text-[#6b7280]">{fmtDate(e.date)}</td>
                               <td className="px-2 py-1.5 text-left">
                                 <button type="button" onClick={() => selectEmployee(e.employee)} className="hover:text-[#047857]">
                                   {e.employee}

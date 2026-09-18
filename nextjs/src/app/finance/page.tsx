@@ -12,6 +12,7 @@ import { useLiveData } from "@/lib/live/useLiveData";
 import { notifyLive } from "@/lib/live/transport";
 import { useHideAmounts } from "@/lib/useHideAmounts";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { fmtDate } from "@/lib/date";
 
 // Контекст «глазка»: дочерние компоненты маскируют суммы через <Amt>.
 const HideCtx = createContext(false);
@@ -548,7 +549,7 @@ function OpRow({
           />
         ) : (
           <div className="text-[11px] text-[#9ca3af]">
-            {op.date} · {isTrf ? "Перевод" : op.accountName}
+            {fmtDate(op.date)} · {isTrf ? "Перевод" : op.accountName}
             {op.comment ? ` · ${op.comment}` : ""}
           </div>
         )}

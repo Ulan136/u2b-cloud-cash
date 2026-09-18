@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { fmtDate } from "@/lib/date";
 
 type Category = { id: number; name: string; icon: string | null };
 type Account = { id: number; name: string; categoryId: number | null; icon: string | null; balance: number; archived: boolean };
@@ -205,7 +206,7 @@ function Bars({ data }: { data: ChartDay[] }) {
         return (
           <rect key={d.date} x={x} y={up ? mid - h : mid} width={bw} height={h} fill={d.minPlus < 0 ? "#eb5757" : "#f2994a"}>
             <title>
-              {d.date}: {d.minPlus > 0 ? "+" : ""}
+              {fmtDate(d.date)}: {d.minPlus > 0 ? "+" : ""}
               {d.minPlus.toLocaleString("ru-RU")}
             </title>
           </rect>

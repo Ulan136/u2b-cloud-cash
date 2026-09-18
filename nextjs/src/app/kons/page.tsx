@@ -5,6 +5,7 @@ import { useLiveData } from "@/lib/live/useLiveData";
 import { notifyLive } from "@/lib/live/transport";
 import { LiveIndicator } from "@/components/LiveIndicator";
 import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
+import { fmtDate } from "@/lib/date";
 
 type Balance = { supplier: string; prihod: number; rashod: number; ostatok: number };
 type HistoryRow = { id: number; date: string; prihod: string; rashod: string; comment: string | null };
@@ -390,7 +391,7 @@ export default function KonsPage() {
                   <tbody>
                     {entries.map((r) => (
                       <tr key={r.id} className="border-t border-[#e5e7eb]">
-                        <td className="px-2 py-1.5 text-left text-[#6b7280]">{r.date}</td>
+                        <td className="px-2 py-1.5 text-left text-[#6b7280]">{fmtDate(r.date)}</td>
                         <td className="px-2 py-1.5 text-left">
                           <button
                             type="button"
@@ -541,7 +542,7 @@ export default function KonsPage() {
                               (editing ? "bg-[#f8fafc]" : "cursor-pointer hover:bg-[#f9fafb]")
                             }
                           >
-                            <td className="px-2 py-1.5 text-left align-top text-[#374151]">{h.date}</td>
+                            <td className="px-2 py-1.5 text-left align-top text-[#374151]">{fmtDate(h.date)}</td>
                             {editing ? (
                               <>
                                 <td className="px-1 py-1.5">

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLiveData } from "@/lib/live/useLiveData";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { fmtDate } from "@/lib/date";
 
 type MonthRow = {
   month: number;
@@ -340,7 +341,7 @@ function GapChart({ perDay }: { perDay: PerDay[] }) {
               fill={d.minPlus < 0 ? "#f87171" : "#fb923c"}
             >
               <title>
-                {d.date}: {d.minPlus > 0 ? "+" : ""}
+                {fmtDate(d.date)}: {d.minPlus > 0 ? "+" : ""}
                 {d.minPlus.toLocaleString("ru-RU")}
               </title>
             </rect>
