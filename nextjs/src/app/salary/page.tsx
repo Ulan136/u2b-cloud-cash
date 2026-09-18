@@ -24,6 +24,10 @@ function fmtLocal(d: Date) {
   return `${y}-${m}-${day}`;
 }
 const todayStr = () => fmtLocal(new Date());
+function todayRange() {
+  const t = fmtLocal(new Date());
+  return { from: t, to: t };
+}
 function weekRange() {
   const t = new Date();
   const f = new Date();
@@ -33,10 +37,6 @@ function weekRange() {
 function monthRange() {
   const t = new Date();
   return { from: fmtLocal(new Date(t.getFullYear(), t.getMonth(), 1)), to: fmtLocal(t) };
-}
-function yearRange() {
-  const t = new Date();
-  return { from: fmtLocal(new Date(t.getFullYear(), 0, 1)), to: fmtLocal(t) };
 }
 
 const input =
@@ -76,10 +76,10 @@ export default function SalaryPage() {
   const [status, setStatus] = useState("");
 
   // период
-  const initRange = useMemo(() => yearRange(), []);
+  const initRange = useMemo(() => monthRange(), []);
   const [from, setFrom] = useState(initRange.from);
   const [to, setTo] = useState(initRange.to);
-  const [preset, setPreset] = useState("year");
+  const [preset, setPreset] = useState("month");
   const [search, setSearch] = useState("");
 
   const loadReport = useCallback(async () => {
@@ -115,6 +115,18 @@ export default function SalaryPage() {
     if (selectedRef.current) await loadHistory(selectedRef.current);
   }, [loadReport, loadDir, loadHistory]);
 
+  // Удаление выплаты (по подтверждению) — из журнала/истории.
+  async function deleteEntry(id: number) {
+    if (!window.confirm("Удалить эту выплату?")) return;
+    const res = await fetch(`/api/salary?id=${id}`, { method: "DELETE" });
+    if (!res.ok) return setStatus("Ошибка удаления");
+    setEditId(null);
+    setStatus("Удалено ✓");
+    notifyLive();
+    await loadReport();
+    if (selectedRef.current) await loadHistory(selectedRef.current);
+  }
+
   async function createEmployee(name: string, phone: string): Promise<DirItem | null> {
     const res = await fetch("/api/settings/employees", {
       method: "POST",
@@ -145,6 +157,15 @@ export default function SalaryPage() {
       .map((e) => ({ employee: e.name, total: byEmpMap.get(e.name) ?? 0 }))
       .sort((a, b) => b.total - a.total || a.employee.localeCompare(b.employee, "ru"));
   }, [dirEmployees, byEmpMap, search]);
+
+  // Итог выплат в журнале (для подвала таблицы).
+  const journalTotal = useMemo(
+    () =>
+      selected
+        ? (history ?? []).reduce((s, h) => s + num(h.amount), 0)
+        : entries.reduce((s, e) => s + num(e.amount), 0),
+    [selected, history, entries]
+  );
 
   function applyPreset(name: string, range: { from: string; to: string }) {
     setPreset(name);
@@ -311,9 +332,9 @@ export default function SalaryPage() {
                 <>
                   <div className="mb-2 grid grid-cols-3 gap-2">
                     {[
+                      { k: "today", label: "Сегодня", r: todayRange },
                       { k: "week", label: "Неделя", r: weekRange },
                       { k: "month", label: "Месяц", r: monthRange },
-                      { k: "year", label: "Год", r: yearRange },
                     ].map((b) => (
                       <button
                         key={b.k}
@@ -374,8 +395,9 @@ export default function SalaryPage() {
                                     {money(selected ?? "", num(h.amount))}
                                   </td>
                                   <td className="px-2 py-1.5 text-left text-[#6b7280]">{h.comment}</td>
-                                  <td className="px-1 py-1.5 text-right">
+                                  <td className="px-1 py-1.5 text-right whitespace-nowrap">
                                     <button type="button" onClick={() => startEdit(h)} className="text-[#b0b6bf] hover:text-[#2f80ed]" aria-label="Изменить">✎</button>
+                                    <button type="button" onClick={() => deleteEntry(h.id)} className="ml-2 text-[#b0b6bf] hover:text-[#c81e1e]" aria-label="Удалить">🗑</button>
                                   </td>
                                 </>
                               )}
@@ -411,8 +433,9 @@ export default function SalaryPage() {
                                     {money(e.employee, num(e.amount))}
                                   </td>
                                   <td className="px-2 py-1.5 text-left text-[#6b7280]">{e.comment}</td>
-                                  <td className="px-1 py-1.5 text-right">
+                                  <td className="px-1 py-1.5 text-right whitespace-nowrap">
                                     <button type="button" onClick={() => startEdit(e)} className="text-[#b0b6bf] hover:text-[#2f80ed]" aria-label="Изменить">✎</button>
+                                    <button type="button" onClick={() => deleteEntry(e.id)} className="ml-2 text-[#b0b6bf] hover:text-[#c81e1e]" aria-label="Удалить">🗑</button>
                                   </td>
                                 </>
                               )}
@@ -428,6 +451,20 @@ export default function SalaryPage() {
                       </tr>
                     )}
                   </tbody>
+                  {((selected && (history?.length ?? 0) > 0) ||
+                    (!selected && entries.length > 0)) && (
+                    <tfoot className="border-t border-[#e5e7eb] bg-[#f9fafb] font-semibold">
+                      <tr>
+                        <td className="px-2 py-1.5 text-left text-[#6b7280]" colSpan={selected ? 1 : 2}>
+                          Итого · {selected ? history?.length ?? 0 : entries.length}
+                        </td>
+                        <td className="px-2 py-1.5 text-right text-[#047857]">
+                          {money(selected ?? "", journalTotal)}
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </div>
             </div>

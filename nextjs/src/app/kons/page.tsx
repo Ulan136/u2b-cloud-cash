@@ -8,6 +8,7 @@ import { DirectorySelect, type DirItem } from "@/components/DirectorySelect";
 
 type Balance = { supplier: string; prihod: number; rashod: number; ostatok: number };
 type HistoryRow = { id: number; date: string; prihod: string; rashod: string; comment: string | null };
+type PeriodRow = { id: number; date: string; supplier: string; prihod: string; rashod: string; comment: string | null; author?: string | null };
 
 const num = (v: string) => {
   const n = parseFloat(v);
@@ -22,6 +23,20 @@ function fmtLocal(d: Date) {
   return `${y}-${m}-${day}`;
 }
 const todayStr = () => fmtLocal(new Date());
+function todayRange() {
+  const t = fmtLocal(new Date());
+  return { from: t, to: t };
+}
+function weekRange() {
+  const t = new Date();
+  const f = new Date();
+  f.setDate(t.getDate() - 6);
+  return { from: fmtLocal(f), to: fmtLocal(t) };
+}
+function monthRange() {
+  const t = new Date();
+  return { from: fmtLocal(new Date(t.getFullYear(), t.getMonth(), 1)), to: fmtLocal(t) };
+}
 
 const input =
   "w-full rounded-lg bg-white border border-[#e5e7eb] px-3 py-2 text-sm";
@@ -80,12 +95,21 @@ export default function KonsPage() {
   // поиск по списку поставщиков (правая панель)
   const [search, setSearch] = useState("");
 
+  // «История за период» — журнал операций (под формой ВНЕСТИ)
+  const initRange = useMemo(() => monthRange(), []);
+  const [entries, setEntries] = useState<PeriodRow[]>([]);
+  const [from, setFrom] = useState(initRange.from);
+  const [to, setTo] = useState(initRange.to);
+  const [preset, setPreset] = useState("month");
+
+  // Остаток поставщиков — всегда за всё время; period влияет только на журнал entries.
   const loadAnalysis = useCallback(async () => {
-    const res = await fetch("/api/kons");
+    const res = await fetch(`/api/kons?from=${from}&to=${to}`);
     const d = await res.json();
     setBalances(d.balances ?? []);
     setTotalOstatok(d.totalOstatok ?? 0);
-  }, []);
+    setEntries(d.entries ?? []);
+  }, [from, to]);
 
   const loadDir = useCallback(async () => {
     const res = await fetch("/api/settings/suppliers?archived=0");
@@ -105,12 +129,30 @@ export default function KonsPage() {
     setHistory(d.history ?? []);
   }, []);
 
+  function applyPreset(name: string, range: { from: string; to: string }) {
+    setPreset(name);
+    setFrom(range.from);
+    setTo(range.to);
+  }
+
+  // Удаление операции (по подтверждению) — из журнала.
+  async function deleteEntry(id: number) {
+    if (!window.confirm("Удалить эту операцию?")) return;
+    const res = await fetch(`/api/kons?id=${id}`, { method: "DELETE" });
+    if (!res.ok) return setStatus("Ошибка удаления");
+    setEditId(null);
+    setStatus("Удалено ✓");
+    notifyLive();
+    await loadAnalysis();
+    if (selectedRef.current) await loadHistory(selectedRef.current);
+  }
+
   const load = useCallback(async () => {
     await Promise.all([loadAnalysis(), loadDir()]);
     if (selectedRef.current) await loadHistory(selectedRef.current);
   }, [loadAnalysis, loadDir, loadHistory]);
 
-  const { refreshing, lastUpdated } = useLiveData("kons", load, []);
+  const { refreshing, lastUpdated } = useLiveData("kons", load, [from, to]);
 
   async function createSupplier(name: string, phone: string): Promise<DirItem | null> {
     const res = await fetch("/api/settings/suppliers", {
@@ -158,6 +200,15 @@ export default function KonsPage() {
       (h) => (!histFrom || h.date >= histFrom) && (!histTo || h.date <= histTo)
     );
   }, [history, histFrom, histTo]);
+
+  // Итоги журнала за период (для подвала таблицы).
+  const periodTotals = useMemo(
+    () => ({
+      prihod: entries.reduce((s, r) => s + num(r.prihod), 0),
+      rashod: entries.reduce((s, r) => s + num(r.rashod), 0),
+    }),
+    [entries]
+  );
 
   function selectSupplier(name: string) {
     selectedRef.current = name;
@@ -291,6 +342,114 @@ export default function KonsPage() {
                 </button>
               </div>
               {status && <p className="mt-2 text-xs text-[#374151]">{status}</p>}
+            </div>
+
+            {/* История за период — журнал операций (Сегодня/Неделя/Месяц + даты) */}
+            <div className={panel}>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
+                История за период
+              </div>
+              <div className="mb-2 grid grid-cols-3 gap-2">
+                {[
+                  { k: "today", label: "Сегодня", r: todayRange },
+                  { k: "week", label: "Неделя", r: weekRange },
+                  { k: "month", label: "Месяц", r: monthRange },
+                ].map((b) => (
+                  <button
+                    key={b.k}
+                    type="button"
+                    onClick={() => applyPreset(b.k, b.r())}
+                    className={
+                      "rounded-lg border py-1.5 text-xs font-semibold " +
+                      (preset === b.k
+                        ? "border-[#2f80ed] bg-[#eaf1fd] text-[#2f80ed]"
+                        : "border-[#e5e7eb] bg-white text-[#6b7280]")
+                    }
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <input type="date" value={from} onChange={(e) => { setPreset("custom"); setFrom(e.target.value); }} className={input} />
+                <input type="date" value={to} onChange={(e) => { setPreset("custom"); setTo(e.target.value); }} className={input} />
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                <table className="w-full text-xs tabular-nums">
+                  <thead className="bg-white text-[#6b7280]">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium">Дата</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Поставщик</th>
+                      <th className="px-2 py-1.5 text-right font-medium">Приход</th>
+                      <th className="px-2 py-1.5 text-right font-medium">Оплата</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Комментарий</th>
+                      <th className="px-1 py-1.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((r) => (
+                      <tr key={r.id} className="border-t border-[#e5e7eb]">
+                        <td className="px-2 py-1.5 text-left text-[#6b7280]">{r.date}</td>
+                        <td className="px-2 py-1.5 text-left">
+                          <button
+                            type="button"
+                            onClick={() => selectSupplier(r.supplier)}
+                            className="hover:text-[#2f80ed]"
+                          >
+                            {r.supplier}
+                          </button>
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          <AmtBadge v={num(r.prihod)} kind="prihod" />
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          <AmtBadge v={num(r.rashod)} kind="rashod" />
+                        </td>
+                        <td className="px-2 py-1.5 text-left text-[#6b7280]">
+                          {r.comment}
+                          {r.author && (
+                            <span className="ml-1 text-[11px] text-[#9ca3af]">· {r.author}</span>
+                          )}
+                        </td>
+                        <td className="px-1 py-1.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => deleteEntry(r.id)}
+                            className="text-[#b0b6bf] hover:text-[#c81e1e]"
+                            aria-label="Удалить"
+                          >
+                            🗑
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {entries.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-2 py-3 text-center text-[#9ca3af]">
+                          Операций за период нет
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {entries.length > 0 && (
+                    <tfoot className="border-t border-[#e5e7eb] bg-[#f9fafb] font-semibold">
+                      <tr>
+                        <td className="px-2 py-1.5 text-left text-[#6b7280]" colSpan={2}>
+                          Итого · {entries.length}
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          <AmtBadge v={periodTotals.prihod} kind="prihod" />
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          <AmtBadge v={periodTotals.rashod} kind="rashod" />
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
             </div>
 
             {/* Карточка выбранного поставщика (остаток за всё время + история) */}
