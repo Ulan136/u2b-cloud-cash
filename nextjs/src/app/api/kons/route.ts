@@ -45,5 +45,10 @@ export async function DELETE(req: NextRequest) {
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "id обязателен" }, { status: 400 });
   }
+  // Удаление, как и правка, требует пароль (Настройки → Безопасность).
+  const body = await req.json().catch(() => ({}));
+  if (!(await checkEditPassword(body?.password))) {
+    return NextResponse.json({ error: "Неверный пароль" }, { status: 403 });
+  }
   return NextResponse.json(await konsService.deleteEntry(id));
 }

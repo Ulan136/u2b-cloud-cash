@@ -116,10 +116,16 @@ export default function SalaryPage() {
     if (selectedRef.current) await loadHistory(selectedRef.current);
   }, [loadReport, loadDir, loadHistory]);
 
-  // Удаление выплаты (по подтверждению) — из журнала/истории.
+  // Удаление выплаты — по паролю (как и правка).
   async function deleteEntry(id: number) {
-    if (!window.confirm("Удалить эту выплату?")) return;
-    const res = await fetch(`/api/salary?id=${id}`, { method: "DELETE" });
+    const password = window.prompt("Пароль для удаления записи:");
+    if (password === null) return; // отмена
+    const res = await fetch(`/api/salary?id=${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.status === 403) return setStatus("Неверный пароль — удаление отменено");
     if (!res.ok) return setStatus("Ошибка удаления");
     setEditId(null);
     setStatus("Удалено ✓");

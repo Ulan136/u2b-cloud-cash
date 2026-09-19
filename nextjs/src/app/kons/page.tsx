@@ -136,10 +136,16 @@ export default function KonsPage() {
     setTo(range.to);
   }
 
-  // Удаление операции (по подтверждению) — из журнала.
+  // Удаление операции — по паролю (как и правка).
   async function deleteEntry(id: number) {
-    if (!window.confirm("Удалить эту операцию?")) return;
-    const res = await fetch(`/api/kons?id=${id}`, { method: "DELETE" });
+    const password = window.prompt("Пароль для удаления записи:");
+    if (password === null) return; // отмена
+    const res = await fetch(`/api/kons?id=${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.status === 403) return setStatus("Неверный пароль — удаление отменено");
     if (!res.ok) return setStatus("Ошибка удаления");
     setEditId(null);
     setStatus("Удалено ✓");
@@ -281,7 +287,8 @@ export default function KonsPage() {
     setEditId(null);
     setStatus("Изменено ✓");
     notifyLive();
-    if (selectedRef.current) await Promise.all([loadAnalysis(), loadHistory(selectedRef.current)]);
+    await loadAnalysis(); // журнал за период + остатки
+    if (selectedRef.current) await loadHistory(selectedRef.current);
   }
 
   return (
@@ -389,42 +396,94 @@ export default function KonsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {entries.map((r) => (
-                      <tr key={r.id} className="border-t border-[#e5e7eb]">
-                        <td className="px-2 py-1.5 text-left text-[#6b7280]">{fmtDate(r.date)}</td>
-                        <td className="px-2 py-1.5 text-left">
-                          <button
-                            type="button"
-                            onClick={() => selectSupplier(r.supplier)}
-                            className="hover:text-[#2f80ed]"
-                          >
-                            {r.supplier}
-                          </button>
-                        </td>
-                        <td className="px-2 py-1.5 text-right">
-                          <AmtBadge v={num(r.prihod)} kind="prihod" />
-                        </td>
-                        <td className="px-2 py-1.5 text-right">
-                          <AmtBadge v={num(r.rashod)} kind="rashod" />
-                        </td>
-                        <td className="px-2 py-1.5 text-left text-[#6b7280]">
-                          {r.comment}
-                          {r.author && (
-                            <span className="ml-1 text-[11px] text-[#9ca3af]">· {r.author}</span>
+                    {entries.map((r) => {
+                      const editing = editId === r.id;
+                      return (
+                        <tr key={r.id} className="border-t border-[#e5e7eb]">
+                          <td className="px-2 py-1.5 text-left text-[#6b7280] align-top">{fmtDate(r.date)}</td>
+                          <td className="px-2 py-1.5 text-left align-top">
+                            {editing ? (
+                              <span className="text-[#374151]">{r.supplier}</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => selectSupplier(r.supplier)}
+                                className="hover:text-[#2f80ed]"
+                              >
+                                {r.supplier}
+                              </button>
+                            )}
+                          </td>
+                          {editing ? (
+                            <>
+                              <td className="px-1 py-1.5">
+                                <input
+                                  inputMode="decimal"
+                                  value={editPrihod}
+                                  onChange={(e) => setEditPrihod(e.target.value)}
+                                  placeholder="0"
+                                  className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                />
+                              </td>
+                              <td className="px-1 py-1.5">
+                                <input
+                                  inputMode="decimal"
+                                  value={editRashod}
+                                  onChange={(e) => setEditRashod(e.target.value)}
+                                  placeholder="0"
+                                  className="w-16 rounded border border-[#e5e7eb] px-1.5 py-1 text-right tabular-nums"
+                                />
+                              </td>
+                              <td className="px-1 py-1.5">
+                                <input
+                                  value={editComment}
+                                  onChange={(e) => setEditComment(e.target.value)}
+                                  placeholder="Комментарий"
+                                  className="w-full min-w-[90px] rounded border border-[#e5e7eb] px-1.5 py-1"
+                                />
+                              </td>
+                              <td className="px-1 py-1.5 text-right whitespace-nowrap">
+                                <button type="button" onClick={saveEdit} className="font-bold text-[#047857] hover:opacity-80" aria-label="Сохранить">✓</button>
+                                <button type="button" onClick={() => setEditId(null)} className="ml-1.5 text-[#9ca3af] hover:text-[#c81e1e]" aria-label="Отмена">✕</button>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-2 py-1.5 text-right align-top">
+                                <AmtBadge v={num(r.prihod)} kind="prihod" />
+                              </td>
+                              <td className="px-2 py-1.5 text-right align-top">
+                                <AmtBadge v={num(r.rashod)} kind="rashod" />
+                              </td>
+                              <td className="px-2 py-1.5 text-left text-[#6b7280] align-top">
+                                {r.comment}
+                                {r.author && (
+                                  <span className="ml-1 text-[11px] text-[#9ca3af]">· {r.author}</span>
+                                )}
+                              </td>
+                              <td className="px-1 py-1.5 text-right align-top whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => startEdit(r)}
+                                  className="text-[#b0b6bf] hover:text-[#2f80ed]"
+                                  aria-label="Изменить"
+                                >
+                                  ✎
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteEntry(r.id)}
+                                  className="ml-2 text-[#b0b6bf] hover:text-[#c81e1e]"
+                                  aria-label="Удалить"
+                                >
+                                  🗑
+                                </button>
+                              </td>
+                            </>
                           )}
-                        </td>
-                        <td className="px-1 py-1.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => deleteEntry(r.id)}
-                            className="text-[#b0b6bf] hover:text-[#c81e1e]"
-                            aria-label="Удалить"
-                          >
-                            🗑
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                     {entries.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-2 py-3 text-center text-[#9ca3af]">
