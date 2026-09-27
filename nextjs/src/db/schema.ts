@@ -114,11 +114,12 @@ export const debts = pgTable("debts", {
   author: text("author"),
 });
 
+// «Жаке инк» — журнал инкассации: нал/каспи/халык + комментарий (обычно «ЖАКЕН»).
 export const incassation = pgTable("incassation", {
   id: serial("id").primaryKey(),
   date: date("date").notNull(),
-  operation: text("operation").notNull(),
-  cash: numeric("cash").default("0"),
+  operation: text("operation").notNull(), // NOT NULL в БД: пишем комментарий/«инкассация»
+  cash: numeric("cash").default("0"), // Наличка
   kaspi: numeric("kaspi").default("0"),
   halyk: numeric("halyk").default("0"),
   comment: text("comment"),

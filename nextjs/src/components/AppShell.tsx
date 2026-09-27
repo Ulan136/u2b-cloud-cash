@@ -15,6 +15,7 @@ const ITEMS = [
   { href: "/dolgi", icon: "🤝", label: "Долги" },
   { href: "/salary", icon: "💰", label: "Зарплата" },
   { href: "/kons", icon: "📦", label: "КОНС" },
+  { href: "/inkassa", icon: "🚚", label: "Жаке инк" },
   { href: "/finance", icon: "🏦", label: "Финансы" },
   { href: "/reports", icon: "📊", label: "Отчёты" },
   { href: "/analytics", icon: "📈", label: "Анализы" },

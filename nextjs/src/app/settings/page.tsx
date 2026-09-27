@@ -566,6 +566,7 @@ const PAGES = [
   { key: "/dolgi", label: "Долги" },
   { key: "/salary", label: "Зарплата" },
   { key: "/kons", label: "КОНС" },
+  { key: "/inkassa", label: "Жаке инк" },
   { key: "/finance", label: "Финансы" },
   { key: "/reports", label: "Отчёты" },
   { key: "/analytics", label: "Анализы" },
