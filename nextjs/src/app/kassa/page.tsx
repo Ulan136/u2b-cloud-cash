@@ -377,7 +377,7 @@ export default function KassaPage() {
           className="flex h-12 items-center border-l-4"
           style={{ borderLeftColor: STRIPE[key] ?? "transparent", background: "#f2f7ff" }}
         >
-          <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">{label}</span>
+          <span className="w-28 shrink-0 truncate pl-3 pr-1 text-[13px] text-[#374151]">{label}</span>
           {expr && (
             <span
               title="Сумма выражения (разбивка сохраняется)"
@@ -403,7 +403,7 @@ export default function KassaPage() {
             onChange={(e) => setField(key, e.target.value)}
             placeholder="0"
             disabled={closed}
-            className="h-full w-44 bg-transparent pr-4 text-right text-lg font-semibold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
+            className="h-full flex-1 min-w-0 bg-transparent pr-4 text-right text-xl font-bold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
           />
         </div>
         {openDayComments[key] && (
@@ -426,8 +426,8 @@ export default function KassaPage() {
         (highlight ? "bg-[#f3f4f6]" : "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]")
       }
     >
-      <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#6b7280]">{label}</span>
-      <span className="w-44 pr-4 text-right text-base font-semibold tabular-nums">{fmt(value)}</span>
+      <span className="w-28 shrink-0 truncate pl-3 pr-1 text-[13px] text-[#6b7280]">{label}</span>
+      <span className="flex-1 pr-4 text-right text-lg font-bold tabular-nums">{fmt(value)}</span>
     </div>
   );
 
@@ -503,10 +503,10 @@ export default function KassaPage() {
             <div className="overflow-hidden rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
               {/* ЗАРПЛАТА — авто из журнала Зарплаты за день, только для просмотра */}
               <div className="flex h-12 items-center" style={{ background: "#eef7ff" }}>
-                <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">
-                  ЗАРПЛАТА <span className="text-[11px] text-[#9ca3af]">· из журнала</span>
+                <span className="w-28 shrink-0 truncate pl-3 pr-1 text-[13px] text-[#374151]">
+                  ЗАРПЛАТА
                 </span>
-                <span className="w-36 pr-4 text-right text-base font-semibold tabular-nums text-[#374151]">
+                <span className="flex-1 pr-4 text-right text-lg font-bold tabular-nums text-[#374151]">
                   {fmt(salaryDayTotal)}
                 </span>
               </div>
@@ -516,7 +516,7 @@ export default function KassaPage() {
                     className="flex h-12 items-center"
                     style={{ background: "#f2f7ff" }}
                   >
-                    <span className="flex-1 truncate pl-4 pr-2 text-[15px] text-[#374151]">
+                    <span className="w-28 shrink-0 truncate pl-3 pr-1 text-[13px] text-[#374151]">
                       {cat}
                     </span>
                     {hasExpr(exp[cat]?.amount ?? "") && (
@@ -548,7 +548,7 @@ export default function KassaPage() {
                       onChange={(e) => updateExp(cat, { amount: e.target.value })}
                       placeholder="0"
                       disabled={closed}
-                      className="h-full w-36 bg-transparent pr-4 text-right text-base font-semibold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
+                      className="h-full flex-1 min-w-0 bg-transparent pr-4 text-right text-xl font-bold tabular-nums outline-none focus:bg-[#eaf1fd] disabled:opacity-60"
                     />
                   </div>
                   {openComments[cat] && (

@@ -272,6 +272,12 @@ export default function DolgiPage() {
     [balances]
   );
 
+  // Телефон клиента по id — показываем в списке (для звонков без потери места).
+  const phoneById = useMemo(
+    () => new Map(clients.map((c) => [c.id, c.phone])),
+    [clients]
+  );
+
   const filteredClients = useMemo(() => {
     const q = clientQuery.trim();
     if (!q) return clients.slice(0, 30);
@@ -1052,9 +1058,9 @@ export default function DolgiPage() {
               ))}
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+            <div className="max-h-[65vh] overflow-auto rounded-lg border border-[#e5e7eb]">
               <table className="w-full text-sm tabular-nums">
-                <thead className="bg-white text-[#6b7280]">
+                <thead className="sticky top-0 z-10 bg-white text-[#6b7280]">
                   <tr>
                     {(
                       [
@@ -1086,8 +1092,13 @@ export default function DolgiPage() {
                       }
                     >
                       <td className="px-3 py-2 text-left">
-                        {b.overdue && <span title="просрочено">🔴 </span>}
-                        {b.name}
+                        <div>
+                          {b.overdue && <span title="просрочено">🔴 </span>}
+                          {b.name}
+                        </div>
+                        {phoneById.get(b.id) && (
+                          <div className="text-[11px] text-[#9ca3af]">{phoneById.get(b.id)}</div>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <AmtBadge v={b.debts} kind="debt" />
